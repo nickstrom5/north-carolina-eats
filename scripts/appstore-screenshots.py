@@ -32,7 +32,7 @@ IPAD = [("01-home", "home.png", "North Carolina's food, list by list"),
         ("03-lexington", "lexington_bbq.png", "Lexington barbecue, red slaw and all"),
         ("04-map", "map.png", "Hand-checked places on the map"),
         ("05-honors", "honors.png", "Award winners and classics"),
-        ("06-inspections", "inspections.png", "Wake County's own inspection scores")]
+        ("06-hot-dogs", "hot_dogs.png", "Carolina hot dogs, all the way")]   # Wake County Inspections' title truncates in the iPad list column
 BANNED = ("free", "best", "#1", "top ", "james beard", "michelin")   # price claims, rankings and others' marks stay out of captions
 for _, _, cap in IPHONE + IPAD:
     assert not any(b in cap.lower() for b in BANNED), cap

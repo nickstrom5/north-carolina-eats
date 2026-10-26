@@ -32,8 +32,9 @@ website blocklist = union of oh/co/pa/tn (879). Never modify another state's fol
   latest, highest score, lowest score, nearest; rows show the street address, grade, score and month.
 - Search: NC guide phrases; "barbecue" and "bbq" find the same places. OTA data updates (`Services/DataUpdates.swift`, shared copy) came
   with the port.
-- Unit tests: 50 run 2026-10-26, all pass but the two ShareLinkTests that need `docs/data` (re-run after the site build). UI tests
-  ported, not run.
+- Tests (2026-10-26, Xcode 1.app 27.1 27A9275, "NC Eats 6.9" iOS 27.0): 50 unit tests pass (ShareLinkTests against docs/data
+  included); 7 UI tests pass (tour 185 s). iPad simulator for captures: "NC Eats iPad 13" in `.simulators`.
+- Addresses: `common._case` uppercases "Nc-55" to "NC-55" (about 700 addresses read "Nc" before 2026-10-26).
 
 ## Website (ported 2026-10-26 from tn-eats, inspections after oh-eats)
 - `scripts/make-site.py` -> `docs/` (BASE /north-carolina-eats until `NC_DOMAIN=northcarolina.eatsranked.com`); `scripts/explore.js` is the
@@ -43,13 +44,17 @@ website blocklist = union of oh/co/pa/tn (879). Never modify another state's fol
 - Grades: `north-carolina-restaurant-grades.html` explains rule .2662, counts Wake's latest grades and links all 100 counties' pages in
   the state's search (`portal` + `county_no` in the app data). No page lists places by score; the web app's Wake County Inspections
   guide opens on the latest inspections. qa-site.py fails if any published grade isn't the letter .2662 gives its score
-  (mutation-checked 2026-10-26: a B on a 99.5 is caught).
+  (mutation-checked 2026-10-26: a B on a 99.5 is caught), and if a place with a Wake grade lists no Wake permit (it caught 5 real ones,
+  The Pit among them: the inspection came through the business's permit while another listing copy held the one-to-one match;
+  northcarolina.py now adds the inspection's own permit to the place's records).
 - OTA: `python3 scripts/publish_app_data.py` after every export copied into `NorthCarolinaEats/Resources` (first copy 2026-10-26.1).
 - Screens: `bash scripts/capture-screenshots.sh "NC Eats 6.9"`, then `scripts/site-images.sh` and make-site.py again.
 
 ## Still to do
-1. Screenshots (`capture-screenshots.sh`, `site-images.sh`), UI tests, `make-listing.py`, review reply (playbook/13).
-2. Research gaps (`data/research/app/LEADS.md`): Moravian bakeries, oldest places, fish camps, more hot dogs and Calabash; Montgomery Sky
+1. Done 2026-10-26: screenshots (site + App Store frames), UI tests, listing and review reply. Before an archive: check the Xcode
+   build is a public release (DTXcodeBuild), and Nick records the review video (playbook/13).
+2. Research gaps (`data/research/app/LEADS.md`): Moravian bakeries (deweys.com, wilkersonbakery.com, hanescookies.com answer Claude's
+   fetcher 429: read them in a browser), oldest places, fish camps, more hot dogs, one more Calabash place (for its page); Montgomery Sky
    Farm's address; Lantern's dated source; Good Hot Fish's MICHELIN level in a browser; adult-venue address list.
 3. Nick: send the DHHS records request (draft in `playbook/records-requests.md`); later repo/Pages, Cloudflare CNAME `northcarolina`,
    ASC record. Nothing pushed.

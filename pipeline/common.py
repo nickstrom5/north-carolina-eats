@@ -40,8 +40,10 @@ def _case(w, first, addr):
     core = re.sub(r"[^a-z']", "", lw)
     if re.fullmatch(r"(bbq|ii|iii|iv|usa|jj|kfc|ihop|tgi|atm|llc|bp|dj|pb|vfw|amvets|ymca|uw|[a-z])", core):
         return w.upper()
-    if addr and re.fullmatch(r"(ne|nw|se|sw|us|co|cr|sh)", core):
+    if addr and re.fullmatch(r"(ne|nw|se|sw|us|co|cr|sh|nc)", core):   # "Nc-55" -> "NC-55"
         return w.upper()
+    if addr and lw.startswith("nc-"):   # "Nc-16-Br", "Nc-Hwy" (next export; three such addresses on 2026-10-26)
+        return "NC-" + "-".join(_case(x, False, addr) for x in w[3:].split("-"))
     if re.fullmatch(r"(dj|bj|jj)'s", core):
         return core[:2].upper() + core[2:] + w[len(core):]
     if not addr and core not in NOT_ACRONYM and re.fullmatch(r"[b-df-hj-np-tv-xz]{2,4}", core) and not re.search(r"(.)\1\1", core):

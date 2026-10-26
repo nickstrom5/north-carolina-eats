@@ -131,8 +131,8 @@
  "noindex_pages": [],
  "web_app_data_bytes": {
   "data/core.json": {
-   "raw": 2104616,
-   "gzip": 384305
+   "raw": 2104600,
+   "gzip": 384294
   },
   "data/detail-alamance-county.json": {
    "raw": 23049,
@@ -148,15 +148,15 @@
   },
   "data/detail-anson-county.json": {
    "raw": 1704,
-   "gzip": 595
+   "gzip": 596
   },
   "data/detail-ashe-county.json": {
    "raw": 2632,
-   "gzip": 877
+   "gzip": 876
   },
   "data/detail-avery-county.json": {
    "raw": 2976,
-   "gzip": 963
+   "gzip": 961
   },
   "data/detail-beaufort-county.json": {
    "raw": 4748,
@@ -164,11 +164,11 @@
   },
   "data/detail-bertie-county.json": {
    "raw": 621,
-   "gzip": 277
+   "gzip": 275
   },
   "data/detail-bladen-county.json": {
    "raw": 2796,
-   "gzip": 845
+   "gzip": 843
   },
   "data/detail-brunswick-county.json": {
    "raw": 22597,
@@ -176,15 +176,15 @@
   },
   "data/detail-buncombe-county.json": {
    "raw": 47346,
-   "gzip": 12310
+   "gzip": 12309
   },
   "data/detail-burke-county.json": {
    "raw": 8454,
-   "gzip": 2379
+   "gzip": 2378
   },
   "data/detail-cabarrus-county.json": {
    "raw": 28709,
-   "gzip": 7281
+   "gzip": 7282
   },
   "data/detail-caldwell-county.json": {
    "raw": 6377,
@@ -192,7 +192,7 @@
   },
   "data/detail-camden-county.json": {
    "raw": 410,
-   "gzip": 225
+   "gzip": 224
   },
   "data/detail-carteret-county.json": {
    "raw": 14124,
@@ -200,7 +200,7 @@
   },
   "data/detail-caswell-county.json": {
    "raw": 889,
-   "gzip": 374
+   "gzip": 373
   },
   "data/detail-catawba-county.json": {
    "raw": 22754,
@@ -220,7 +220,7 @@
   },
   "data/detail-clay-county.json": {
    "raw": 1112,
-   "gzip": 424
+   "gzip": 422
   },
   "data/detail-cleveland-county.json": {
    "raw": 10000,
@@ -228,11 +228,11 @@
   },
   "data/detail-columbus-county.json": {
    "raw": 4674,
-   "gzip": 1359
+   "gzip": 1357
   },
   "data/detail-craven-county.json": {
    "raw": 12483,
-   "gzip": 3323
+   "gzip": 3322
   },
   "data/detail-cumberland-county.json": {
    "raw": 46584,
@@ -244,23 +244,23 @@
   },
   "data/detail-dare-county.json": {
    "raw": 16530,
-   "gzip": 4300
+   "gzip": 4299
   },
   "data/detail-davidson-county.json": {
    "raw": 13718,
-   "gzip": 3831
+   "gzip": 3832
   },
   "data/detail-davie-county.json": {
    "raw": 4077,
-   "gzip": 1313
+   "gzip": 1312
   },
   "data/detail-duplin-county.json": {
    "raw": 4651,
-   "gzip": 1400
+   "gzip": 1401
   },
   "data/detail-durham-county.json": {
    "raw": 45159,
-   "gzip": 11239
+   "gzip": 11238
   },
   "data/detail-edgecombe-county.json": {
    "raw": 3819,
@@ -268,11 +268,11 @@
   },
   "data/detail-forsyth-county.json": {
    "raw": 49194,
-   "gzip": 11971
+   "gzip": 11970
   },
   "data/detail-franklin-county.json": {
    "raw": 4942,
-   "gzip": 1415
+   "gzip": 1414
   },
   "data/detail-gaston-county.json": {
    "raw": 25759,
@@ -292,15 +292,15 @@
   },
   "data/detail-greene-county.json": {
    "raw": 811,
-   "gzip": 319
+   "gzip": 318
   },
   "data/detail-guilford-county.json": {
    "raw": 71836,
-   "gzip": 17085
+   "gzip": 17084
   },
   "data/detail-halifax-county.json": {
    "raw": 5337,
-   "gzip": 1493
+   "gzip": 1492
   },
   "data/detail-harnett-county.json": {
    "raw": 11104,
@@ -312,7 +312,7 @@
   },
   "data/detail-henderson-county.json": {
    "raw": 12704,
-   "gzip": 3604
+   "gzip": 3603
   },
   "data/detail-hertford-county.json": {
    "raw": 2111,
@@ -324,15 +324,15 @@
   },
   "data/detail-hyde-county.json": {
    "raw": 1179,
-   "gzip": 398
+   "gzip": 397
   },
   "data/detail-iredell-county.json": {
    "raw": 24279,
-   "gzip": 6167
+   "gzip": 6168
   },
   "data/detail-jackson-county.json": {
    "raw": 6470,
-   "gzip": 1893
+   "gzip": 1892
   },
   "data/detail-johnston-county.json": {
    "raw": 22173,
@@ -340,11 +340,11 @@
   },
   "data/detail-jones-county.json": {
    "raw": 346,
-   "gzip": 212
+   "gzip": 211
   },
   "data/detail-lee-county.json": {
    "raw": 7340,
-   "gzip": 2089
+   "gzip": 2088
   },
   "data/detail-lenoir-county.json": {
    "raw": 5433,
@@ -352,19 +352,19 @@
   },
   "data/detail-lincoln-county.json": {
    "raw": 8185,
-   "gzip": 2296
+   "gzip": 2295
   },
   "data/detail-macon-county.json": {
    "raw": 5350,
-   "gzip": 1568
+   "gzip": 1567
   },
   "data/detail-madison-county.json": {
    "raw": 1670,
-   "gzip": 609
+   "gzip": 608
   },
   "data/detail-martin-county.json": {
    "raw": 2118,
-   "gzip": 711
+   "gzip": 710
   },
   "data/detail-mcdowell-county.json": {
    "raw": 4846,
@@ -372,7 +372,7 @@
   },
   "data/detail-mecklenburg-county.json": {
    "raw": 159834,
-   "gzip": 38769
+   "gzip": 38768
   },
   "data/detail-mitchell-county.json": {
    "raw": 1168,
@@ -380,35 +380,35 @@
   },
   "data/detail-montgomery-county.json": {
    "raw": 2443,
-   "gzip": 835
+   "gzip": 836
   },
   "data/detail-moore-county.json": {
    "raw": 13767,
-   "gzip": 3766
+   "gzip": 3765
   },
   "data/detail-nash-county.json": {
    "raw": 11493,
-   "gzip": 3069
+   "gzip": 3070
   },
   "data/detail-new-hanover-county.json": {
    "raw": 49693,
-   "gzip": 12183
+   "gzip": 12184
   },
   "data/detail-northampton-county.json": {
    "raw": 701,
-   "gzip": 300
+   "gzip": 299
   },
   "data/detail-onslow-county.json": {
    "raw": 23783,
-   "gzip": 5743
+   "gzip": 5742
   },
   "data/detail-orange-county.json": {
    "raw": 16595,
-   "gzip": 4587
+   "gzip": 4586
   },
   "data/detail-pamlico-county.json": {
    "raw": 1429,
-   "gzip": 486
+   "gzip": 487
   },
   "data/detail-pasquotank-county.json": {
    "raw": 6747,
@@ -416,19 +416,19 @@
   },
   "data/detail-pender-county.json": {
    "raw": 8338,
-   "gzip": 2275
+   "gzip": 2274
   },
   "data/detail-perquimans-county.json": {
    "raw": 1008,
-   "gzip": 412
+   "gzip": 411
   },
   "data/detail-person-county.json": {
    "raw": 3521,
-   "gzip": 1091
+   "gzip": 1090
   },
   "data/detail-pitt-county.json": {
    "raw": 23078,
-   "gzip": 5845
+   "gzip": 5847
   },
   "data/detail-polk-county.json": {
    "raw": 2546,
@@ -436,11 +436,11 @@
   },
   "data/detail-randolph-county.json": {
    "raw": 12656,
-   "gzip": 3295
+   "gzip": 3294
   },
   "data/detail-richmond-county.json": {
    "raw": 3644,
-   "gzip": 1109
+   "gzip": 1108
   },
   "data/detail-robeson-county.json": {
    "raw": 11028,
@@ -464,7 +464,7 @@
   },
   "data/detail-scotland-county.json": {
    "raw": 3271,
-   "gzip": 1042
+   "gzip": 1043
   },
   "data/detail-stanly-county.json": {
    "raw": 7322,
@@ -472,19 +472,19 @@
   },
   "data/detail-stokes-county.json": {
    "raw": 3933,
-   "gzip": 1405
+   "gzip": 1404
   },
   "data/detail-surry-county.json": {
    "raw": 9775,
-   "gzip": 2690
+   "gzip": 2689
   },
   "data/detail-swain-county.json": {
    "raw": 2749,
-   "gzip": 919
+   "gzip": 917
   },
   "data/detail-transylvania-county.json": {
    "raw": 4461,
-   "gzip": 1367
+   "gzip": 1366
   },
   "data/detail-tyrrell-county.json": {
    "raw": 254,
@@ -492,15 +492,15 @@
   },
   "data/detail-union-county.json": {
    "raw": 22488,
-   "gzip": 5868
+   "gzip": 5867
   },
   "data/detail-vance-county.json": {
    "raw": 3550,
-   "gzip": 1076
+   "gzip": 1075
   },
   "data/detail-wake-county.json": {
-   "raw": 1775460,
-   "gzip": 277870
+   "raw": 1775750,
+   "gzip": 277901
   },
   "data/detail-warren-county.json": {
    "raw": 1192,
@@ -508,11 +508,11 @@
   },
   "data/detail-washington-county.json": {
    "raw": 1274,
-   "gzip": 459
+   "gzip": 460
   },
   "data/detail-watauga-county.json": {
    "raw": 8268,
-   "gzip": 2362
+   "gzip": 2363
   },
   "data/detail-wayne-county.json": {
    "raw": 12632,
@@ -520,7 +520,7 @@
   },
   "data/detail-wilkes-county.json": {
    "raw": 5781,
-   "gzip": 1652
+   "gzip": 1654
   },
   "data/detail-wilson-county.json": {
    "raw": 8897,
@@ -528,7 +528,7 @@
   },
   "data/detail-yadkin-county.json": {
    "raw": 2952,
-   "gzip": 927
+   "gzip": 926
   },
   "data/detail-yancey-county.json": {
    "raw": 1419,

@@ -1337,6 +1337,15 @@ for off_, b, k, ko, st_ in zip(o.off, o.biz, o.k, o.k_out, o.street):
         rec = [last.grade, float(last.score), last.d, last.typ, int(len(g)), int((g.score < 90).sum()), 0, hist, items[:40], "wak", last.hsisid]
     recs.append(rec or [None] * len(cols_i))
 o[cols_i] = pd.DataFrame(recs, index=o.index, columns=cols_i)
+# the permit an inspection came from is one of the place's official records too: a place whose own listing matched no permit, but whose
+# business did (another copy of the listing took the one-to-one match), showed Wake's score next to "permit: none matched" (The Pit, 2026-10-26)
+_food_ix = {F.hsisid.iat[j]: j for j in range(len(F)) if F.kind.iat[j] == "food"}
+_added = 0
+for i_, (hs_, ix_) in enumerate(zip(o.in_lic, o.lic_ix)):
+    if isinstance(hs_, str) and hs_ in _food_ix and not any(F.hsisid.iat[j] == hs_ for j in ix_):
+        o.at[o.index[i_], "lic_ix"] = list(ix_) + [_food_ix[hs_]]
+        _added += 1
+print("inspected places given the inspection's own permit as a record:", _added)
 _hs = [F_hs.get(F.lic.iat[int(j)]) for j in o.off.dropna()]
 print("places with Wake inspection results:", int(o.in_res.notna().sum()), "| latest grade:", o.in_res.value_counts().to_dict(),
       "| records through", INS_THROUGH)

@@ -569,6 +569,9 @@ def static_checks():
                 if not 0 <= i < core["n"] or rows[i].get("co") != co:
                     problems.append(f"data: {os.path.basename(f)} has place {k}, which isn't in that county")
                     break
+                # a Wake grade comes from a Wake permit, so the place lists it (never "permit: none matched" beside a score)
+                if rows[i].get("ib") is not None and not any(isinstance(l, list) and l and l[0] == "Wake County food service permit" for l in d.get("lic") or []):
+                    problems.append(f"data: {rows[i]['n']!r} shows Wake County's grade but lists no Wake County permit")
                 w = d.get("w")
                 if w and not re.match(r"https?://", w):
                     problems.append(f"data: website {w!r} for {rows[i]['n']!r} isn't http(s)")

@@ -1461,8 +1461,8 @@ page("explore/index.html", title, desc, body, [webapp_ld, bc], extra_css=EXPLORE
 # alt text says what each capture shows (docs/screenshots, made by scripts/capture-screenshots.sh; copies by scripts/site-images.sh)
 shots = [("home", "The North Carolina Eats home screen: a search box and guide cards for Eastern Whole Hog, Lexington Barbecue, Carolina Hot Dogs and Biscuits & Livermush, each with its count of places.", "A guide for each North Carolina craving."),
          ("eastern_bbq", "The hand-checked Eastern whole hog list in North Carolina Eats, with each place's town.", "Whole hog, east of Raleigh."),
-         ("detail", "Sam Jones BBQ in North Carolina Eats: its address, Bib Gourmand and Eastern whole hog tags, a button for Apple Maps' ratings, hours and photos, Directions and Call buttons, and Wake County's latest inspection score and grade.", "Each place, with Wake County's grade."),
-         ("inspections", "Wake County's inspections in North Carolina Eats: each place's street address, grade card, score and month.", "Wake County's own scores."),
+         ("detail", "Sam Jones BBQ in North Carolina Eats: its address, Bib Gourmand and Eastern whole hog tags, a button for Apple Maps' ratings, hours and photos, Directions, Call and Website buttons, a small map and the hand-checked notes.", "Each place, hand-checked notes and all."),
+         ("inspections", "Wake County's inspections in North Carolina Eats, latest first: each place's town, kind of food and street address, with its grade, score and month.", "Wake County's own scores."),
          ("map", "The North Carolina Eats map around Raleigh, with pins and numbered clusters and filter buttons for North Carolina picks and honors.", "The map, by guide."),
          ("honors", "The MICHELIN and James Beard list in North Carolina Eats.", "MICHELIN Guide and James Beard honorees.")]
 shot_html = []

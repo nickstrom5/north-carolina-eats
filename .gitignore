@@ -19,3 +19,5 @@ playbook/brand/concept-*-512.png
 playbook/app-store/raw/
 playbook/app-store/iphone/
 playbook/app-store/ipad/
+# full-size simulator captures (the site publishes the downscaled copies in docs/img)
+docs/screenshots/
