@@ -1,0 +1,21 @@
+{
+  "name": "North Carolina Eats",
+  "short_name": "NC Eats",
+  "description": "Restaurants, BBQ & biscuits: a guide to 22,903 North Carolina restaurants.",
+  "start_url": "/north-carolina-eats/",
+  "display": "browser",
+  "background_color": "#f3f5fa",
+  "theme_color": "#13294b",
+  "icons": [
+    {
+      "src": "/north-carolina-eats/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/north-carolina-eats/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

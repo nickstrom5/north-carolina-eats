@@ -1,0 +1,546 @@
+{
+ "generated": "2026-10-26",
+ "domain": "https://nickstrom5.github.io/north-carolina-eats",
+ "restaurants": 22903,
+ "places_incl_hidden": 24030,
+ "towns": 594,
+ "counties": 100,
+ "on_an_official_list": 2372,
+ "hand_checked_on_a_guide": 35,
+ "wake_inspected": 2097,
+ "wake_grades": {
+  "A": 2087,
+  "B": 10
+ },
+ "guide_bbqeast": 9,
+ "guide_bbqlex": 13,
+ "guide_hotdogs": 5,
+ "guide_calabash": 3,
+ "guide_biscuits": 5,
+ "guide_moravian": 0,
+ "guide_pages": [
+  "bbqeast",
+  "bbqlex",
+  "hotdogs",
+  "biscuits"
+ ],
+ "oldest": 0,
+ "honors": 64,
+ "michelin": {
+  "MICHELIN Recommended": 46,
+  "Bib Gourmand": 11,
+  "1 MICHELIN Star": 1
+ },
+ "james_beard": 8,
+ "americas_classics": 2,
+ "permits_updated": "2026-10-26",
+ "inspections_through": "2026-09-14",
+ "city_pages": {
+  "Raleigh": {
+   "restaurants": 1566,
+   "listed": 16,
+   "wake_inspected": 1024,
+   "bbqeast": 2,
+   "bbqlex": 0,
+   "hotdogs": 4,
+   "biscuits": 0,
+   "hon": 12,
+   "oldest": 0
+  },
+  "Charlotte": {
+   "restaurants": 2230,
+   "listed": 15,
+   "wake_inspected": 0,
+   "bbqeast": 0,
+   "bbqlex": 0,
+   "hotdogs": 0,
+   "biscuits": 0,
+   "hon": 15,
+   "oldest": 0
+  },
+  "Asheville": {
+   "restaurants": 626,
+   "listed": 20,
+   "wake_inspected": 0,
+   "bbqeast": 0,
+   "bbqlex": 0,
+   "hotdogs": 0,
+   "biscuits": 3,
+   "hon": 17,
+   "oldest": 0
+  },
+  "Durham": {
+   "restaurants": 763,
+   "listed": 6,
+   "wake_inspected": 0,
+   "bbqeast": 0,
+   "bbqlex": 0,
+   "hotdogs": 0,
+   "biscuits": 0,
+   "hon": 6,
+   "oldest": 0
+  },
+  "Lexington": {
+   "restaurants": 127,
+   "listed": 7,
+   "wake_inspected": 0,
+   "bbqeast": 0,
+   "bbqlex": 7,
+   "hotdogs": 0,
+   "biscuits": 0,
+   "hon": 1,
+   "oldest": 0
+  },
+  "Greenville": {
+   "restaurants": 293,
+   "listed": 5,
+   "wake_inspected": 0,
+   "bbqeast": 4,
+   "bbqlex": 0,
+   "hotdogs": 0,
+   "biscuits": 0,
+   "hon": 1,
+   "oldest": 0
+  }
+ },
+ "cities_without_a_page": {
+  "Greensboro": 2,
+  "Winston-Salem": 1,
+  "Chapel Hill": 2,
+  "Carrboro": 1,
+  "Cary": 2,
+  "Wilmington": 2,
+  "Fayetteville": 0,
+  "High Point": 0,
+  "Shelby": 2,
+  "Calabash": 3,
+  "Ayden": 1,
+  "Knightdale": 1,
+  "Burlington": 1,
+  "Boone": 0,
+  "Hendersonville": 0,
+  "Concord": 1,
+  "Davidson": 1,
+  "Cornelius": 1,
+  "Pittsboro": 1,
+  "Salisbury": 0,
+  "Wake Forest": 0,
+  "Apex": 0,
+  "Morrisville": 0
+ },
+ "noindex_pages": [],
+ "web_app_data_bytes": {
+  "data/core.json": {
+   "raw": 2104616,
+   "gzip": 384305
+  },
+  "data/detail-alamance-county.json": {
+   "raw": 23049,
+   "gzip": 5952
+  },
+  "data/detail-alexander-county.json": {
+   "raw": 2149,
+   "gzip": 712
+  },
+  "data/detail-alleghany-county.json": {
+   "raw": 998,
+   "gzip": 384
+  },
+  "data/detail-anson-county.json": {
+   "raw": 1704,
+   "gzip": 595
+  },
+  "data/detail-ashe-county.json": {
+   "raw": 2632,
+   "gzip": 877
+  },
+  "data/detail-avery-county.json": {
+   "raw": 2976,
+   "gzip": 963
+  },
+  "data/detail-beaufort-county.json": {
+   "raw": 4748,
+   "gzip": 1412
+  },
+  "data/detail-bertie-county.json": {
+   "raw": 621,
+   "gzip": 277
+  },
+  "data/detail-bladen-county.json": {
+   "raw": 2796,
+   "gzip": 845
+  },
+  "data/detail-brunswick-county.json": {
+   "raw": 22597,
+   "gzip": 5967
+  },
+  "data/detail-buncombe-county.json": {
+   "raw": 47346,
+   "gzip": 12310
+  },
+  "data/detail-burke-county.json": {
+   "raw": 8454,
+   "gzip": 2379
+  },
+  "data/detail-cabarrus-county.json": {
+   "raw": 28709,
+   "gzip": 7281
+  },
+  "data/detail-caldwell-county.json": {
+   "raw": 6377,
+   "gzip": 1833
+  },
+  "data/detail-camden-county.json": {
+   "raw": 410,
+   "gzip": 225
+  },
+  "data/detail-carteret-county.json": {
+   "raw": 14124,
+   "gzip": 3821
+  },
+  "data/detail-caswell-county.json": {
+   "raw": 889,
+   "gzip": 374
+  },
+  "data/detail-catawba-county.json": {
+   "raw": 22754,
+   "gzip": 6047
+  },
+  "data/detail-chatham-county.json": {
+   "raw": 6579,
+   "gzip": 1911
+  },
+  "data/detail-cherokee-county.json": {
+   "raw": 3696,
+   "gzip": 1203
+  },
+  "data/detail-chowan-county.json": {
+   "raw": 1560,
+   "gzip": 540
+  },
+  "data/detail-clay-county.json": {
+   "raw": 1112,
+   "gzip": 424
+  },
+  "data/detail-cleveland-county.json": {
+   "raw": 10000,
+   "gzip": 2821
+  },
+  "data/detail-columbus-county.json": {
+   "raw": 4674,
+   "gzip": 1359
+  },
+  "data/detail-craven-county.json": {
+   "raw": 12483,
+   "gzip": 3323
+  },
+  "data/detail-cumberland-county.json": {
+   "raw": 46584,
+   "gzip": 10673
+  },
+  "data/detail-currituck-county.json": {
+   "raw": 5479,
+   "gzip": 1488
+  },
+  "data/detail-dare-county.json": {
+   "raw": 16530,
+   "gzip": 4300
+  },
+  "data/detail-davidson-county.json": {
+   "raw": 13718,
+   "gzip": 3831
+  },
+  "data/detail-davie-county.json": {
+   "raw": 4077,
+   "gzip": 1313
+  },
+  "data/detail-duplin-county.json": {
+   "raw": 4651,
+   "gzip": 1400
+  },
+  "data/detail-durham-county.json": {
+   "raw": 45159,
+   "gzip": 11239
+  },
+  "data/detail-edgecombe-county.json": {
+   "raw": 3819,
+   "gzip": 1203
+  },
+  "data/detail-forsyth-county.json": {
+   "raw": 49194,
+   "gzip": 11971
+  },
+  "data/detail-franklin-county.json": {
+   "raw": 4942,
+   "gzip": 1415
+  },
+  "data/detail-gaston-county.json": {
+   "raw": 25759,
+   "gzip": 6672
+  },
+  "data/detail-gates-county.json": {
+   "raw": 201,
+   "gzip": 116
+  },
+  "data/detail-graham-county.json": {
+   "raw": 587,
+   "gzip": 275
+  },
+  "data/detail-granville-county.json": {
+   "raw": 4054,
+   "gzip": 1222
+  },
+  "data/detail-greene-county.json": {
+   "raw": 811,
+   "gzip": 319
+  },
+  "data/detail-guilford-county.json": {
+   "raw": 71836,
+   "gzip": 17085
+  },
+  "data/detail-halifax-county.json": {
+   "raw": 5337,
+   "gzip": 1493
+  },
+  "data/detail-harnett-county.json": {
+   "raw": 11104,
+   "gzip": 2890
+  },
+  "data/detail-haywood-county.json": {
+   "raw": 8963,
+   "gzip": 2548
+  },
+  "data/detail-henderson-county.json": {
+   "raw": 12704,
+   "gzip": 3604
+  },
+  "data/detail-hertford-county.json": {
+   "raw": 2111,
+   "gzip": 648
+  },
+  "data/detail-hoke-county.json": {
+   "raw": 2653,
+   "gzip": 846
+  },
+  "data/detail-hyde-county.json": {
+   "raw": 1179,
+   "gzip": 398
+  },
+  "data/detail-iredell-county.json": {
+   "raw": 24279,
+   "gzip": 6167
+  },
+  "data/detail-jackson-county.json": {
+   "raw": 6470,
+   "gzip": 1893
+  },
+  "data/detail-johnston-county.json": {
+   "raw": 22173,
+   "gzip": 5719
+  },
+  "data/detail-jones-county.json": {
+   "raw": 346,
+   "gzip": 212
+  },
+  "data/detail-lee-county.json": {
+   "raw": 7340,
+   "gzip": 2089
+  },
+  "data/detail-lenoir-county.json": {
+   "raw": 5433,
+   "gzip": 1556
+  },
+  "data/detail-lincoln-county.json": {
+   "raw": 8185,
+   "gzip": 2296
+  },
+  "data/detail-macon-county.json": {
+   "raw": 5350,
+   "gzip": 1568
+  },
+  "data/detail-madison-county.json": {
+   "raw": 1670,
+   "gzip": 609
+  },
+  "data/detail-martin-county.json": {
+   "raw": 2118,
+   "gzip": 711
+  },
+  "data/detail-mcdowell-county.json": {
+   "raw": 4846,
+   "gzip": 1460
+  },
+  "data/detail-mecklenburg-county.json": {
+   "raw": 159834,
+   "gzip": 38769
+  },
+  "data/detail-mitchell-county.json": {
+   "raw": 1168,
+   "gzip": 465
+  },
+  "data/detail-montgomery-county.json": {
+   "raw": 2443,
+   "gzip": 835
+  },
+  "data/detail-moore-county.json": {
+   "raw": 13767,
+   "gzip": 3766
+  },
+  "data/detail-nash-county.json": {
+   "raw": 11493,
+   "gzip": 3069
+  },
+  "data/detail-new-hanover-county.json": {
+   "raw": 49693,
+   "gzip": 12183
+  },
+  "data/detail-northampton-county.json": {
+   "raw": 701,
+   "gzip": 300
+  },
+  "data/detail-onslow-county.json": {
+   "raw": 23783,
+   "gzip": 5743
+  },
+  "data/detail-orange-county.json": {
+   "raw": 16595,
+   "gzip": 4587
+  },
+  "data/detail-pamlico-county.json": {
+   "raw": 1429,
+   "gzip": 486
+  },
+  "data/detail-pasquotank-county.json": {
+   "raw": 6747,
+   "gzip": 2157
+  },
+  "data/detail-pender-county.json": {
+   "raw": 8338,
+   "gzip": 2275
+  },
+  "data/detail-perquimans-county.json": {
+   "raw": 1008,
+   "gzip": 412
+  },
+  "data/detail-person-county.json": {
+   "raw": 3521,
+   "gzip": 1091
+  },
+  "data/detail-pitt-county.json": {
+   "raw": 23078,
+   "gzip": 5845
+  },
+  "data/detail-polk-county.json": {
+   "raw": 2546,
+   "gzip": 837
+  },
+  "data/detail-randolph-county.json": {
+   "raw": 12656,
+   "gzip": 3295
+  },
+  "data/detail-richmond-county.json": {
+   "raw": 3644,
+   "gzip": 1109
+  },
+  "data/detail-robeson-county.json": {
+   "raw": 11028,
+   "gzip": 2817
+  },
+  "data/detail-rockingham-county.json": {
+   "raw": 7790,
+   "gzip": 2072
+  },
+  "data/detail-rowan-county.json": {
+   "raw": 12871,
+   "gzip": 3483
+  },
+  "data/detail-rutherford-county.json": {
+   "raw": 6157,
+   "gzip": 1810
+  },
+  "data/detail-sampson-county.json": {
+   "raw": 4127,
+   "gzip": 1182
+  },
+  "data/detail-scotland-county.json": {
+   "raw": 3271,
+   "gzip": 1042
+  },
+  "data/detail-stanly-county.json": {
+   "raw": 7322,
+   "gzip": 2055
+  },
+  "data/detail-stokes-county.json": {
+   "raw": 3933,
+   "gzip": 1405
+  },
+  "data/detail-surry-county.json": {
+   "raw": 9775,
+   "gzip": 2690
+  },
+  "data/detail-swain-county.json": {
+   "raw": 2749,
+   "gzip": 919
+  },
+  "data/detail-transylvania-county.json": {
+   "raw": 4461,
+   "gzip": 1367
+  },
+  "data/detail-tyrrell-county.json": {
+   "raw": 254,
+   "gzip": 163
+  },
+  "data/detail-union-county.json": {
+   "raw": 22488,
+   "gzip": 5868
+  },
+  "data/detail-vance-county.json": {
+   "raw": 3550,
+   "gzip": 1076
+  },
+  "data/detail-wake-county.json": {
+   "raw": 1775460,
+   "gzip": 277870
+  },
+  "data/detail-warren-county.json": {
+   "raw": 1192,
+   "gzip": 452
+  },
+  "data/detail-washington-county.json": {
+   "raw": 1274,
+   "gzip": 459
+  },
+  "data/detail-watauga-county.json": {
+   "raw": 8268,
+   "gzip": 2362
+  },
+  "data/detail-wayne-county.json": {
+   "raw": 12632,
+   "gzip": 3277
+  },
+  "data/detail-wilkes-county.json": {
+   "raw": 5781,
+   "gzip": 1652
+  },
+  "data/detail-wilson-county.json": {
+   "raw": 8897,
+   "gzip": 2377
+  },
+  "data/detail-yadkin-county.json": {
+   "raw": 2952,
+   "gzip": 927
+  },
+  "data/detail-yancey-county.json": {
+   "raw": 1419,
+   "gzip": 501
+  },
+  "data/ids.json": {
+   "raw": 297767,
+   "gzip": 172579
+  },
+  "data/nc_shapes.json": {
+   "raw": 125821,
+   "gzip": 30142
+  }
+ }
+}

@@ -1,24 +1,26 @@
 """Writes the public website in docs/ from the same data the app ships (data/app/places.json plus the data/app/detail-*.json files that
-hold Metro Nashville beer permits, phones and websites).
+hold Wake County permits and inspection histories, phones and websites).
 
-Pages: the landing page; six statewide hand-checked guides (Nashville hot chicken, Memphis barbecue, West Tennessee whole hog,
-meat-and-threes, biscuits and country ham, Smokies pancake houses) and the oldest places; MICHELIN & James Beard; how to check a
-Tennessee restaurant inspection (the Department of Health's own search; no scores are copied); one page per city or town with enough
-hand-checked or honored places to say something real, plus a cities index; the web app (/explore/); privacy; terms; 404; sitemap.xml,
-robots.txt, site.webmanifest and playbook/site-numbers.json. Everything listed is hand-checked research or public records; nothing comes
-from Google, Yelp or any ratings site, and nothing is ranked by ratings. Ported from az-eats/scripts/make-site.py.
+Pages: the landing page; the statewide hand-checked guides with at least MIN_GUIDE places (Eastern North Carolina whole hog, Lexington
+barbecue, Carolina hot dogs, biscuits and livermush; Calabash seafood, Moravian bakeries and the oldest places join once their research
+reaches that size); MICHELIN & James Beard; North Carolina's restaurant grades explained (Wake County's published scores, and every
+other county's page in the state's own search); one page per city or town with enough hand-checked or honored places to say something
+real, plus a cities index; the web app (/explore/); privacy; terms; 404; sitemap.xml, robots.txt, site.webmanifest and
+playbook/site-numbers.json. Everything listed is hand-checked research or public records; nothing comes from Google, Yelp or any
+ratings site, and nothing is ranked by ratings. Ported from tn-eats/scripts/make-site.py (inspections after oh-eats).
 
 Rules the copy keeps (scripts/qa-site.py checks them):
-- Every number is counted from the data here, never typed in. Tennessee has no statewide restaurant list, so our lists are "places we
-  list": no sentence claims "every" or "all N" restaurants.
+- Every number is counted from the data here, never typed in. North Carolina has no statewide restaurant list, so our lists are "places
+  we list": no sentence claims "every" or "all N" restaurants.
 - "Checked" only for the hand-checked lists (`hc`, a 2025-26 source for each place).
-- Tennessee publishes inspection reports only in the Department of Health's search: the site links it and shows no score or grade.
-- "Serves beer" only from an on-site Metro Nashville beer permit; elsewhere alcohol is unknown, never "no".
+- A grade is the letter rule 15A NCAC 18A .2662 gives the score Wake County published (the card by the door), never one of ours; no
+  page lists or names places by a low score. Other counties' results stay in the state's search, linked, never copied.
+- Alcohol is unknown everywhere ("—", never "no"): North Carolina's ABC permits aren't published as a list.
 - Claims stay claims: founding years are tied to a dated source, and "first", "oldest" or "original" are the source's words.
 - Every page carries a hash-pinned Content-Security-Policy; inline scripts and styles are hashed after the page is final.
 
-Usage (from tn-eats/): .venv/bin/python scripts/make-site.py           (github.io address, BASE /tennessee-eats)
-                       TN_DOMAIN=tennessee.eatsranked.com .venv/bin/python scripts/make-site.py   (once Nick's CNAME resolves)
+Usage (from nc-eats/): .venv/bin/python scripts/make-site.py           (github.io address, BASE /north-carolina-eats)
+                       NC_DOMAIN=northcarolina.eatsranked.com .venv/bin/python scripts/make-site.py   (once Nick's CNAME resolves)
 Re-run it after every data rebuild, then check the pages with scripts/qa-site.py. Never hand-edit docs/*.html.
 """
 import base64
@@ -37,23 +39,24 @@ from collections import Counter, defaultdict
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DOCS = f"{ROOT}/docs"
-# Where the site lives. Until Nick's Cloudflare record (CNAME tennessee -> nickstrom5.github.io, DNS only) resolves, GitHub Pages serves
-# the project address. When `dig tennessee.eatsranked.com` shows the CNAME, run with TN_DOMAIN=tennessee.eatsranked.com and push: this
-# writes docs/CNAME, and GitHub then forwards the old github.io links (the ones inside shipped app builds).
-CUSTOM_DOMAIN = os.environ.get("TN_DOMAIN", "").strip().lower().removeprefix("https://").removeprefix("http://").strip("/")
-REPO = "tennessee-eats"
+# Where the site lives. Until Nick's Cloudflare record (CNAME northcarolina -> nickstrom5.github.io, DNS only) resolves, GitHub Pages
+# serves the project address. When `dig northcarolina.eatsranked.com` shows the CNAME, run with NC_DOMAIN=northcarolina.eatsranked.com
+# and push: this writes docs/CNAME, and GitHub then forwards the old github.io links (the ones inside shipped app builds).
+CUSTOM_DOMAIN = os.environ.get("NC_DOMAIN", "").strip().lower().removeprefix("https://").removeprefix("http://").strip("/")
+REPO = "north-carolina-eats"
 DOMAIN = f"https://{CUSTOM_DOMAIN}" if CUSTOM_DOMAIN else f"https://nickstrom5.github.io/{REPO}"
 BASE = "" if CUSTOM_DOMAIN else f"/{REPO}"     # path prefix for root-relative links
-BRAND = "Tennessee Eats"
-APP_NAME = "Tennessee Eats: Restaurants"
-TAGLINE = "Hot chicken, BBQ & biscuits"
+BRAND = "North Carolina Eats"
+APP_NAME = "North Carolina Eats"      # Nick, 2026-10-26: "North Carolina Eats: Restaurants" is over Apple's 30, so "Restaurants" is the subtitle
+TAGLINE = "Restaurants, BBQ & biscuits"
 EMAIL = "nick@eatsranked.com"   # Nick, 2026-10-12: the site's contact address (Cloudflare Email Routing)
-PUBLISHED = "2026-10-24"        # the site's first publication (Article datePublished)
-SITE_REV = "2026-10-24"         # the last change to this generator's own copy or code: bump it when you change the words
-POLICY_UPDATED = "2026-10-24"   # privacy policy and terms: bump only when their text changes
+PUBLISHED = "2026-10-26"        # the site's first publication (Article datePublished)
+SITE_REV = "2026-10-26"         # the last change to this generator's own copy or code: bump it when you change the words
+POLICY_UPDATED = "2026-10-26"   # privacy policy and terms: bump only when their text changes
+PRIVACY_UPDATED = "2026-10-26"   # the privacy policy alone: the app's data updates (OTA-DATA.md)
 CHECKED = "fall 2026"
-STORAGE_PREFIX = "tneats-"      # the web app's localStorage keys (other state sites share the nickstrom5.github.io origin)
-# Tennessee Eats is one of the Eats Ranked state sites: the hub (eatsranked.com) lists it as a subOrganization, and every page says so
+STORAGE_PREFIX = "nceats-"      # the web app's localStorage keys (other state sites share the nickstrom5.github.io origin)
+# North Carolina Eats is one of the Eats Ranked state sites: the hub (eatsranked.com) lists it as a subOrganization, and every page says so
 # from this side too (the footer line and the Organization's parentOrganization), in Wisconsin's words.
 HUB = {"@type": "Organization", "@id": "https://eatsranked.com/#organization", "name": "Eats Ranked", "url": "https://eatsranked.com/"}
 ORG_ID = f"{DOMAIN}/#org"
@@ -71,9 +74,16 @@ assert DETAIL_SRC, "data/app/detail-*.json are missing"
 
 
 def merged(r):
-    """One place with its detail fields (Metro Nashville beer permits, phone, website, notes) put back."""
+    """One place with its detail fields put back: the core's "in" is [county, grade, date, score]; the detail's "in" is {n, h, i}."""
     out = dict(r)
-    out.update(DETAIL_SRC.get(r["id"]) or {})
+    ins = r.get("in")
+    if isinstance(ins, list) and len(ins) == 4:
+        out["in"] = {"j": ins[0], "b": ins[1], "d": ins[2], "s": ins[3]}
+    for k, v in (DETAIL_SRC.get(r["id"]) or {}).items():
+        if k == "in" and isinstance(v, dict):
+            out["in"] = {**(out.get("in") or {}), **v}
+        else:
+            out[k] = v
     return out
 
 
@@ -81,10 +91,29 @@ RECS = [merged(r) for r in D["places"]]
 TODAY = max(str(D.get("generated") or SITE_REV)[:10], SITE_REV)   # sitemap lastmod and dateModified move with the data or the copy
 PERMITS_UPDATED = D.get("permits_updated") or ""
 CITIES, CUISINES, COUNTIES = D["cities"], D["cuisines"], D["counties"]
-HOT, BBQ, HOG, MEAT3, BISCUIT, PANCAKE, OLDEST = 1, 2, 4, 8, 16, 32, 64
+BBQEAST, BBQLEX, HOTDOG, CALABASH, BISCUIT, MORAVIAN, OLDEST = 1, 2, 4, 8, 16, 32, 64
 MI = ["", "MICHELIN Recommended", "Bib Gourmand", "1 MICHELIN Star", "2 MICHELIN Stars", "3 MICHELIN Stars"]
-TDH_URL = "https://inspections.myhealthdepartment.com/tennessee"   # the Department of Health's search (all 95 counties); linked, never scraped
-NASHVILLE_PERMITS = "https://data.nashville.gov/datasets/44e9268cd0d548648980418dafdb42da"
+# Wake County's open data (data.wake.gov, CC BY 4.0): its permits and its inspections, the one county that publishes them in bulk
+WAKE_PERMITS = D.get("permits_url") or "https://data.wake.gov/datasets/124c2187da8c41c59bde04fa67eb2872"
+WAKE_INSPECTIONS = D.get("inspections_url") or "https://data.wake.gov/datasets/ebe3ae7f76954fad81411612d7c4fb17"
+# the state's inspection search (NC DHHS, all 100 counties): a county's page is PORTAL + its number. Linked, never copied.
+PORTAL = D["portal"]
+COUNTY_NO = D["county_no"]
+assert len(COUNTY_NO) == 100 and COUNTY_NO["Wake County"] == 92 and COUNTY_NO["Mecklenburg County"] == 60, "the portal numbers counties alphabetically"
+GRADING_RULES = "https://ehs.dph.ncdhhs.gov/docs/rules/Sanitation-of-FoodEstablishments-15ANCAC18A-2600.pdf"   # 15A NCAC 18A .2600
+INS_THROUGH = (D.get("inspections_through") or {}).get("wak") or ""
+RESULTS, ITYPES = D.get("results") or [], D.get("itypes") or []
+assert RESULTS == ["A", "B", "C"] and D.get("ins_jur") == ["wak"], (RESULTS, D.get("ins_jur"))
+
+
+def portal_url(county):
+    return PORTAL + str(COUNTY_NO[county]) if county in COUNTY_NO else PORTAL.split("?")[0]
+
+
+def score_text(x):
+    """96.0 -> "96", 96.5 -> "96.5": the county's own number, as printed on the card."""
+    x = float(x)
+    return str(int(x)) if x == int(x) else f"{x:g}"
 MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 NUM_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
 
@@ -145,7 +174,7 @@ def blocked_site(u):
 
 
 class P:
-    """One place, with the same meaning the app gives each field (TennesseeEats/Models/Place.swift)."""
+    """One place, with the same meaning the app gives each field (NorthCarolinaEats/Models/Place.swift)."""
 
     def __init__(self, r):
         self.r = r
@@ -173,8 +202,11 @@ class P:
         self.h = r.get("h") or 0
         self.mi = r.get("mi") if r.get("mi") in range(1, len(MI)) else 0
         self.hc = r.get("hc") == 1   # hand-checked against a 2025-26 source; the only places the themed guides list
-        self.lic = r.get("lic") or []   # Metro Nashville beer permits: [[list, number]]
-        self.beer = r.get("liq") == 1    # an on-site Metro Nashville beer permit (Davidson County only)
+        self.lic = r.get("lic") or []   # Wake County food service permits: [[list, number]]
+        ins = r.get("in") if isinstance(r.get("in"), dict) else {}
+        # Wake County's latest inspection: its score and the letter rule .2662 gives it (the card by the door)
+        self.ins = ins if isinstance(ins.get("b"), int) and 0 <= ins["b"] < len(RESULTS) and ins.get("d") and ins.get("s") is not None else None
+        self.grade = RESULTS[self.ins["b"]] if self.ins else None
 
     def featured_key(self):
         # the app's "Featured first": honored places, then documented founding year, then name
@@ -185,7 +217,7 @@ class P:
                 else "James Beard semifinalist" if self.h & 8 else None)
 
     def promo_ok(self):
-        """Tennessee publishes no ratings we show, so any listed place may be named in promotional copy."""
+        """North Carolina publishes no ratings we show, so any listed place may be named in promotional copy (never by its score)."""
         return True
 
     def in_guide(self, tag):
@@ -195,18 +227,24 @@ class P:
 PLACES = [P(r) for r in RECS]
 REST = [p for p in PLACES if not p.venue]
 
-GUIDE_TAGS = [("hotchicken", HOT), ("bbq", BBQ), ("wholehog", HOG), ("meat3", MEAT3), ("biscuits", BISCUIT), ("pancakes", PANCAKE)]
-L = {k: sorted([p for p in REST if p.in_guide(t)], key=P.featured_key) for k, t in GUIDE_TAGS}
+# every hand-checked guide the app has; a guide gets its own page once it holds MIN_GUIDE places (the research lands guide by guide)
+ALL_GUIDES = [("bbqeast", BBQEAST), ("bbqlex", BBQLEX), ("hotdogs", HOTDOG), ("calabash", CALABASH), ("biscuits", BISCUIT), ("moravian", MORAVIAN)]
+MIN_GUIDE = 4
+L_ALL = {k: sorted([p for p in REST if p.in_guide(t)], key=P.featured_key) for k, t in ALL_GUIDES}
+GUIDE_TAGS = [(k, t) for k, t in ALL_GUIDES if len(L_ALL[k]) >= MIN_GUIDE]
+L = {k: L_ALL[k] for k, _ in GUIDE_TAGS}
 HON_L = sorted([p for p in REST if p.mi or p.jbf], key=P.featured_key)
 OLD_L = sorted([p for p in REST if p.founded and p.in_guide(OLDEST)], key=lambda p: (p.founded, p.name.lower()))
-HC_ANY = [p for p in REST if p.hc and (p.tags & (HOT | BBQ | HOG | MEAT3 | BISCUIT | PANCAKE | OLDEST))]   # on a hand-checked guide
-BEER_L = [p for p in REST if p.beer]
+HAS_OLD = len(OLD_L) >= MIN_GUIDE
+HC_ANY = [p for p in REST if p.hc and (p.tags & (BBQEAST | BBQLEX | HOTDOG | CALABASH | BISCUIT | MORAVIAN | OLDEST))]   # on a hand-checked guide
+INS_L = [p for p in REST if p.ins]
+GRADE_N = Counter(p.grade for p in INS_L)
 
-# ---------------------------------------------------------------- regions: the app's five (each county to the nearest anchor)
+# ---------------------------------------------------------------- regions: the app's six (each county to the nearest anchor), mountains to sea
 REGIONS = list(D.get("regions") or [])
 REGION_NAME = {r: r for r in REGIONS}
-REGION_ORDER = ["Memphis & West Tennessee", "Nashville & Middle Tennessee", "Chattanooga & Southeast Tennessee", "Knoxville & the Smokies",
-                "Tri-Cities & Northeast Tennessee"]
+REGION_ORDER = ["Asheville & the Mountains", "Charlotte & the Southern Piedmont", "Greensboro, Winston-Salem & the Triad",
+                "Raleigh, Durham & the Triangle", "Wilmington & the Southern Coast", "Eastern North Carolina & the Outer Banks"]
 assert set(REGION_ORDER) == set(REGIONS), REGIONS
 for p in PLACES:
     rg = p.r.get("rg")
@@ -252,32 +290,31 @@ def fit(cands, lo, hi, what=""):
     raise ValueError(f"nothing fits {lo}-{hi} for {what}: {[(len(o), o) for o in seen[:12]]}")
 
 
-# The app icon in miniature (scripts/make-brand.swift, same geometry, simplified): a cayenne-red drumstick with pickle chips on a slice
-# of white bread, on flag navy.
-LOGO = ('<svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#002D72"/>'
-        '<path d="M20 51.4H44Q47.7 51.4 47.7 47.7V30C52 25 49 12.8 32 12.8C15 12.8 12 25 16.3 30V47.7Q16.3 51.4 20 51.4Z" fill="#D99A52"/>'
-        '<path d="M21.6 49H42.4Q45.3 49 45.3 46.1V29.6C49 25.5 46.6 15.2 32 15.2C17.4 15.2 15 25.5 18.7 29.6V46.1Q18.7 49 21.6 49Z" fill="#FFF8EC"/>'
-        '<g fill="#FFF8EC" stroke="#002D72" stroke-width="1.6"><rect x="41" y="32.4" width="11.5" height="3.5" rx="1.7"/>'
-        '<circle cx="52.4" cy="31.2" r="2.7"/><circle cx="52.4" cy="37" r="2.7"/></g>'
-        '<path d="M44.8 31.7C37 29 30 24 21 24C13.5 24 9 28.5 9 33.6C9 39 13.5 43.2 21 43.2C30 43.2 37 38.6 44.8 35.5Z" fill="#C0391B"/>'
-        '<g fill="#8DB33A"><circle cx="16.6" cy="30.7" r="3.2"/><circle cx="24.3" cy="29.1" r="3.2"/><circle cx="32" cy="30.7" r="3.2"/></g></svg>')
+# The app icon in miniature (scripts/make-brand.swift, same geometry, y flipped): a buttermilk biscuit, golden top and baked bottom
+# with two layer lines, on flag red.
+LOGO = ('<svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><defs><clipPath id="lg-b">'
+        '<path d="M9.6 40.96Q9.6 46.08 14.72 46.08H49.28Q54.4 46.08 54.4 40.96V26.88C54.4 20.48 44.8 17.92 32 17.92C19.2 17.92 9.6 20.48 9.6 26.88Z"/>'
+        '</clipPath></defs><rect width="64" height="64" rx="14" fill="#B31942"/>'
+        '<g clip-path="url(#lg-b)"><rect width="64" height="64" fill="#F3D9A6"/><rect y="43.2" width="64" height="20.8" fill="#D69443"/>'
+        '<rect width="64" height="26.56" fill="#D69443"/></g>'
+        '<path d="M14.08 37.44H49.92M14.08 32H49.92" stroke="#E4B871" stroke-width="2.3" stroke-linecap="round"/></svg>')
 FAVICON = "data:image/svg+xml," + LOGO.replace('width="30" height="30" ', "").replace(' aria-hidden="true"', "").replace("<svg ", "<svg xmlns='http://www.w3.org/2000/svg' ").replace('"', "'").replace("#", "%23").replace("<", "%3C").replace(">", "%3E")
 
-# Nick's palette (2026-10-24): the Tennessee flag. Navy #002D72 for text and accents (13.0:1 on white), red #C8102E as a fill under
-# white text (5.9:1) and for small accents, a cool #F3F5FA page tint, soft red #F7DCE1 for tags. Lettering: condensed heavy system faces
+# Nick's palette (2026-10-26): the North Carolina flag. Navy #13294B for text and accents (14.5:1 on white), red #B31942 as a fill under
+# white text (6.7:1) and for small accents, a cool #F3F5FA page tint, soft red #F6DCE2 for tags. Lettering: condensed heavy system faces
 # for headings, the system monospaced face for numbers; no web fonts are loaded (the CSP allows only this site).
 CSS = """
   :root {
     --bg: #f3f5fa; --surface: #fff; --surface2: #e6ebf3; --rule: #dce2ec;
     --ink: #0f1b33; --ink2: #28375a; --muted: #566079;
-    --accent: #002d72; --accent2: #1d4a91; --on-accent: #fff; --orange: #c8102e; --on-orange: #fff; --lime: #e8a33d; --soft: #f7dce1; --limesoft: #fbebc8;
-    --focus: #c8102e;
+    --accent: #13294b; --accent2: #2a4570; --on-accent: #fff; --orange: #b31942; --on-orange: #fff; --lime: #d69443; --soft: #f6dce2; --limesoft: #f3d9a6;
+    --focus: #b31942;
     --radius: 16px;
     --display: "Avenir Next Condensed", "Helvetica Neue Condensed", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #0b1426; --surface: #111e38; --surface2: #172747; --rule: #263a63; --ink: #eef2fa; --ink2: #d3dcef; --muted: #a9b6d0; --accent: #9fb8ff; --accent2: #c0d0ff; --on-accent: #0b1426; --focus: #ff8a9b; }
+    :root { --bg: #0b1426; --surface: #111e38; --surface2: #172747; --rule: #263a63; --ink: #eef2fa; --ink2: #d3dcef; --muted: #a9b6d0; --accent: #a9c0f0; --accent2: #c6d6f6; --on-accent: #0b1426; --focus: #ff8aa4; }
   }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
@@ -331,8 +368,8 @@ CSS = """
   a.card.gc b { font: 600 32px/1 var(--mono); margin-bottom: auto; }
   a.card.gc p, a.card.gc h3 { color: inherit; }
   a.card.gc p { opacity: .92; }
-  a.card.gc.gc-hotchicken, a.card.gc.gc-bbq, a.card.gc.gc-wholehog, a.card.gc.gc-meat3, a.card.gc.gc-biscuits, a.card.gc.gc-pancakes { background: #c8102e; color: #fff; }
-  a.card.gc.gc-oldest, a.card.gc.gc-honors { background: #002d72; color: #fff; }
+  a.card.gc.gc-bbqeast, a.card.gc.gc-bbqlex, a.card.gc.gc-hotdogs, a.card.gc.gc-calabash, a.card.gc.gc-biscuits, a.card.gc.gc-moravian { background: #b31942; color: #fff; }
+  a.card.gc.gc-oldest, a.card.gc.gc-honors, a.card.gc.gc-inspections { background: #13294b; color: #fff; }
   .card p { margin: 6px 0 0; color: var(--ink2); }
   a.card { display: block; text-decoration: none; color: var(--ink); }
   a.card:hover h3 { text-decoration: underline; color: var(--accent); }
@@ -361,10 +398,13 @@ CSS = """
   .places .note { margin: 6px 0 0; font-size: 15px; color: var(--ink2); }
   .places .fine { margin: 6px 0 0; }
   .places .link { font-size: 14px; margin: 6px 0 0; }
-  .tag { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; background: var(--soft); color: #5c0716; border-radius: 6px; padding: 1px 6px; margin: 0 4px 2px 0; }
-  .tag-mi { background: #c8102e; color: #fff; }
-  .tag-jb { background: #002d72; color: #fff; }
+  .tag { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; background: var(--soft); color: #5c0a22; border-radius: 6px; padding: 1px 6px; margin: 0 4px 2px 0; }
+  .tag-mi { background: #b31942; color: #fff; }
+  .tag-jb { background: #13294b; color: #fff; }
   .tag-plain { background: #e6ebf3; color: #0f1b33; }
+  .grades { list-style: none; padding: 0; margin: 0 0 16px; display: flex; flex-wrap: wrap; gap: 10px 24px; }
+  .grades li { display: flex; align-items: center; gap: 8px; }
+  .card-grade { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 6px; border: 2px solid #111; background: #fff; color: #111; font: 800 18px/1 var(--display); border-radius: 4px; }
   .toc { columns: 2; padding-left: 20px; margin: 0; }
   table { border-collapse: collapse; width: 100%; font-size: 15px; }
   th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--rule); vertical-align: top; }
@@ -419,11 +459,11 @@ def store_button(label="Ask for early access"):
     # A plain mailto button until launch: no Apple logo (Apple's marketing rules allow it only in the official badge). When
     # APP_STORE_URL is set in page() below, swap this for Apple's "Download on the App Store" badge artwork. Only Nick's internal
     # TestFlight group exists (2026-10-13): the mailto asks, and no page copy promises an invite or a link.
-    return (f'<a class="btn store-btn" href="mailto:{EMAIL}?subject=Tennessee%20Eats%20early%20access&amp;body=Send%20me%20the%20TestFlight%20link.">'
+    return (f'<a class="btn store-btn" href="mailto:{EMAIL}?subject=North%20Carolina%20Eats%20early%20access&amp;body=Send%20me%20the%20TestFlight%20link.">'
             f'<span class="store-label">{label}</span></a>')
 
 
-STORE_NOTE = "The free Tennessee Eats app for iPhone and iPad is on its way to the App Store."
+STORE_NOTE = "The free North Carolina Eats app for iPhone and iPad is on its way to the App Store."
 
 
 def sha256_src(s):
@@ -442,13 +482,15 @@ def csp_for(doc):
 
 CSP_SLOT = "__CSP__"
 written, noindexed = [], []
-NAV = [("/nashville-hot-chicken.html", "Hot chicken"), ("/memphis-barbecue.html", "Memphis BBQ"),
-       ("/tennessee-meat-and-threes.html", "Meat-and-threes"), ("/cities/", "Cities"), ("/explore/", "Search")]
-# the Grand Divisions, West, Middle and East, as three navy bands split by red rules under a red line (the flag's three stars stand for them)
-RAYS = ('<svg viewBox="0 0 1200 20" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="0" width="1200" height="4" fill="#c8102e"/>'
-        '<rect x="0" y="4" width="398" height="16" fill="#002d72"/><rect x="402" y="4" width="396" height="16" fill="#1d4a91"/>'
-        '<rect x="802" y="4" width="398" height="16" fill="#3f67a8"/><rect x="398" y="4" width="4" height="16" fill="#c8102e"/>'
-        '<rect x="798" y="4" width="4" height="16" fill="#c8102e"/></svg>')
+NAV = [("/eastern-north-carolina-barbecue.html", "Eastern BBQ"), ("/lexington-barbecue.html", "Lexington BBQ"),
+       ("/north-carolina-restaurant-grades.html", "Grades"), ("/cities/", "Cities"), ("/explore/", "Search")]
+# from Murphy to Manteo: Blue Ridge ridges at the left easing into the coastal plain and the dunes at the right, three navy shades over
+# a red rule (the app's Home band and the share image's horizon, flattened to 20 px)
+RAYS = ('<svg viewBox="0 0 1200 20" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="0" width="1200" height="20" fill="#f3f5fa"/>'
+        '<path d="M0 20V9L60 3 115 8 170 1 230 8 290 4 350 10 420 8 520 12 640 10 760 13 900 12 1040 14 1200 13V20Z" fill="#5d7aa6"/>'
+        '<path d="M0 20V12L70 7 130 11 190 6 250 11 320 9 400 13 520 13 660 14 820 14 980 15 1120 15 1200 15V20Z" fill="#2a4570"/>'
+        '<path d="M0 20V15L120 12 260 14 420 15 620 16 800 16 960 16.5 1060 16 1110 16.5 1150 16 1200 16.5V20Z" fill="#13294b"/>'
+        '<rect x="0" y="17" width="1200" height="3" fill="#b31942"/></svg>')
 
 
 def page(path, title, desc, body, lds=(), robots="index,follow,max-image-preview:large", og_alt=None, extra_css="", og_type="article"):
@@ -460,7 +502,7 @@ def page(path, title, desc, body, lds=(), robots="index,follow,max-image-preview
     indexed = "noindex" not in robots
     if not any("parentOrganization" in json.dumps(x) for x in lds):   # every page names its publisher and the Eats Ranked parent
         lds = list(lds) + [{"@context": "https://schema.org", **ORG_REF}]
-    og_alt = og_alt or f"{BRAND}: {TAGLINE}. Tennessee restaurants, with hand-checked hot chicken, Memphis barbecue, whole hog, meat-and-threes and biscuits."
+    og_alt = og_alt or f"{BRAND}: {TAGLINE}. North Carolina restaurants, with hand-checked Eastern and Lexington barbecue, hot dogs and biscuits."
     ld = "\n".join(jsonld(x) for x in lds)
     canon = f'<link rel="canonical" href="{url}">\n' if indexed else ""
     og_url = f'<meta property="og:url" content="{url}">\n' if indexed else ""
@@ -474,7 +516,7 @@ def page(path, title, desc, body, lds=(), robots="index,follow,max-image-preview
 <title>{e(title)}</title>
 <meta name="description" content="{e(desc)}">
 {canon}<meta name="robots" content="{robots}">
-<meta name="theme-color" content="#002d72">
+<meta name="theme-color" content="#13294b">
 <!-- Smart App Banner: once the App Store Connect record exists, replace APP_ID with the numeric Apple ID and uncomment.
 <meta name="apple-itunes-app" content="app-id=APP_ID">
 -->
@@ -512,7 +554,7 @@ def page(path, title, desc, body, lds=(), robots="index,follow,max-image-preview
   <footer>
     <nav aria-label="Footer">
       <a href="/">{BRAND} app</a>
-      <a href="/explore/">Search Tennessee restaurants</a>
+      <a href="/explore/">Search North Carolina restaurants</a>
 {chr(10).join(f'      <a href="{u}">{e(t)}</a>' for u, t in GUIDE_LINKS)}
       <a href="/cities/">Cities and towns</a>
       <a href="/privacy.html">Privacy policy</a>
@@ -539,7 +581,7 @@ def page(path, title, desc, body, lds=(), robots="index,follow,max-image-preview
 </body>
 </html>
 """
-    if BASE:   # served under /tennessee-eats/: every root-relative link and asset gets the prefix
+    if BASE:   # served under /north-carolina-eats/: every root-relative link and asset gets the prefix
         doc = re.sub(r'(href|src|srcset)="/', rf'\1="{BASE}/', doc)
     doc = doc.replace(CSP_SLOT, csp_for(doc), 1)   # hashed last, over the exact bytes the browser will see
     os.makedirs(os.path.dirname(f"{DOCS}/{path}"), exist_ok=True)
@@ -552,7 +594,7 @@ class Anchors:
     """Gives each place an id (name-zip) the first time it appears on a page, so ItemList items can point to page#id."""
     RESERVED = {"main", "about", "list", "honors", "oldest", "inspections", "cuisines", "more", "towns", "how", "what", "guides", "cities",
                 "faq", "download", "screens", "pricing", "privacy", "groups", "counties", "lookup", "closures", "tiers", "lg-r", "lg-f", "lg-p",
-                "cities-list"} | {k for k, _ in GUIDE_TAGS}
+                "lg-b", "cities-list", "grades", "wake", "portal"} | {k for k, _ in ALL_GUIDES}
 
     def __init__(self, page_url):
         self.page_url, self.used, self.of = page_url, set(self.RESERVED), {}
@@ -572,8 +614,8 @@ class Anchors:
         return f"{self.page_url}#{self.of[id(p)]}"
 
 
-CHIPS = [(HOT, "Hot chicken"), (BBQ, "Memphis barbecue"), (HOG, "Whole hog"), (MEAT3, "Meat-and-three"), (BISCUIT, "Biscuits &amp; country ham"),
-         (PANCAKE, "Pancake house")]
+CHIPS = [(BBQEAST, "Eastern whole hog"), (BBQLEX, "Lexington barbecue"), (HOTDOG, "Carolina hot dogs"), (CALABASH, "Calabash seafood"),
+         (BISCUIT, "Biscuits &amp; livermush"), (MORAVIAN, "Moravian bakery")]
 
 
 def place_item(p, anchors=None, show_fn=False, honors=False):
@@ -615,7 +657,7 @@ def restaurant_ld(p, item_url):
         addr["streetAddress"] = p.addr
     if p.city:
         addr["addressLocality"] = p.city
-    addr["addressRegion"] = "TN"
+    addr["addressRegion"] = "NC"
     if p.zip:
         addr["postalCode"] = p.zip
     addr["addressCountry"] = "US"
@@ -653,21 +695,23 @@ MI_N = Counter(p.mi for p in HON_L if p.mi)
 MI_COUNT = {MI[k]: v for k, v in sorted(MI_N.items())}
 N_JBF = sum(1 for p in HON_L if p.jbf)
 N_CLASSICS = sum(1 for p in HON_L if p.h & 1)
-INS_PATH = "tennessee-restaurant-inspections.html"
-HON_PATH = "tennessee-michelin-james-beard.html"
-OLD_PATH = "tennessee-oldest-restaurants.html"
-GUIDE_PATH = {"hotchicken": "nashville-hot-chicken.html", "bbq": "memphis-barbecue.html", "wholehog": "tennessee-whole-hog-barbecue.html",
-              "meat3": "tennessee-meat-and-threes.html", "biscuits": "tennessee-biscuits-country-ham.html", "pancakes": "smoky-mountains-pancake-houses.html"}
-GUIDE_NAME = {"hotchicken": "Nashville hot chicken", "bbq": "Memphis barbecue", "wholehog": "Whole hog barbecue", "meat3": "Meat-and-threes",
-              "biscuits": "Biscuits & country ham", "pancakes": "Smokies pancake houses"}
+INS_PATH = "north-carolina-restaurant-grades.html"
+HON_PATH = "north-carolina-michelin-james-beard.html"
+OLD_PATH = "north-carolina-oldest-restaurants.html"
+GUIDE_PATH = {"bbqeast": "eastern-north-carolina-barbecue.html", "bbqlex": "lexington-barbecue.html", "hotdogs": "carolina-hot-dogs.html",
+              "calabash": "calabash-seafood.html", "biscuits": "north-carolina-biscuits-livermush.html", "moravian": "moravian-bakeries.html"}
+GUIDE_NAME = {"bbqeast": "Eastern whole hog barbecue", "bbqlex": "Lexington barbecue", "hotdogs": "Carolina hot dogs",
+              "calabash": "Calabash seafood", "biscuits": "Biscuits & livermush", "moravian": "Moravian bakeries"}
 GUIDE_LINKS = ([("/" + GUIDE_PATH[k], GUIDE_NAME[k]) for k, _ in GUIDE_TAGS]
-               + [("/" + OLD_PATH, "Oldest restaurants"), ("/" + HON_PATH, "MICHELIN & James Beard"), ("/" + INS_PATH, "Checking an inspection")])
+               + ([("/" + OLD_PATH, "Oldest restaurants")] if HAS_OLD else [])
+               + [("/" + HON_PATH, "MICHELIN & James Beard"), ("/" + INS_PATH, "Restaurant grades, explained")])
 
-SOURCES_LINE = (f"Place data: hand-checked research by {BRAND} ({CHECKED}); Metro Nashville's Beer Permit Board permit list (Nashville Open Data, "
-                f"retrieved {PERMITS_UPDATED}); Overture Maps Foundation places (CDLA Permissive 2.0) and addresses (open address sources under "
+SOURCES_LINE = (f"Place data: hand-checked research by {BRAND} ({CHECKED}); Wake County Environmental Health & Safety's food service permits "
+                f"and food inspections (Wake County Open Data, CC BY 4.0, retrieved {PERMITS_UPDATED}, inspections through {hdate(INS_THROUGH)}); "
+                "Overture Maps Foundation places (CDLA Permissive 2.0) and addresses (open address sources under "
                 "permissive licenses, docs.overturemaps.org/attribution); map outlines © OpenStreetMap contributors, Overture Maps Foundation (ODbL). "
-                "Not affiliated with or endorsed by the State of Tennessee, the Tennessee Department of Health, the Metropolitan Government of "
-                "Nashville and Davidson County, any county, any restaurant or chain, the MICHELIN Guide or the James Beard Foundation. MICHELIN "
+                "Not affiliated with or endorsed by the State of North Carolina, NC DHHS, Wake County or any other county, any restaurant or "
+                "chain, the MICHELIN Guide or the James Beard Foundation. MICHELIN "
                 "and the MICHELIN Guide are trademarks of Michelin; James Beard Foundation and James Beard Award are trademarks of the James Beard "
                 "Foundation. Places open and close, so check before you go.")
 
@@ -677,7 +721,7 @@ def by_region(places, key=lambda p: (p.city, p.name.lower())):
     for p in places:
         groups[p.region or "Elsewhere"].append(p)
     order = REGION_ORDER + ["Elsewhere"]
-    return [(REGION_NAME.get(r, "Elsewhere in Tennessee"), sorted(groups[r], key=key)) for r in order if groups.get(r)]
+    return [(REGION_NAME.get(r, "Elsewhere in North Carolina"), sorted(groups[r], key=key)) for r in order if groups.get(r)]
 
 
 def region_sections(places, noun, plural_noun, anchors, **item_kw):
@@ -692,9 +736,9 @@ def region_sections(places, noun, plural_noun, anchors, **item_kw):
 
 
 # ---------------------------------------------------------------- city pages: which towns get one
-CITY_WANTED = ["Nashville", "Memphis", "Knoxville", "Chattanooga", "Gatlinburg", "Pigeon Forge", "Sevierville", "Franklin", "Murfreesboro",
-               "Jackson", "Johnson City", "Kingsport", "Bristol", "Clarksville", "Maryville", "Antioch", "Madison", "Mt. Juliet", "Spring Hill",
-               "Cordova", "Columbia", "Sewanee", "Lexington"]
+CITY_WANTED = ["Raleigh", "Charlotte", "Asheville", "Durham", "Greensboro", "Winston-Salem", "Chapel Hill", "Carrboro", "Cary", "Lexington",
+               "Greenville", "Wilmington", "Fayetteville", "High Point", "Shelby", "Calabash", "Ayden", "Knightdale", "Burlington", "Boone",
+               "Hendersonville", "Concord", "Davidson", "Cornelius", "Pittsboro", "Salisbury", "Wake Forest", "Apex", "Morrisville"]
 MIN_LISTED = 4   # hand-checked, honored or oldest places in the town itself: fewer, and the town gets no page yet
 
 
@@ -773,9 +817,10 @@ def top_dishes(places, k=6, skip=()):
 
 
 HOW_BUILT = ("Our method: a place made the list only if a 2025 or 2026 source backed it up (its own site or menu, a dated local news "
-             "story or an official tourism listing) and its street address matched. No current source, or a website gone dark, and it "
-             "stayed off. Review sites played no part, and places run by region and town rather than by anybody's score. Meat-and-threes "
-             "often serve lunch only and barbecue joints close when the meat runs out, so check before you drive.")
+             "story, a Wake County inspection, the MICHELIN Guide or a current listing by the state's or the town's tourism office) and its "
+             "street address matched. No current source, or a website gone dark, and it stayed off. Review sites played no part, and places "
+             "run by region and town rather than by anybody's score. Barbecue joints often close early or when the meat runs out, so check "
+             "before you drive.")
 APP_LINE = (f"On your phone, {BRAND} orders this list by how far each place is from you, and a tap opens Apple Maps' live card with "
             "hours, photos and directions.")
 
@@ -789,7 +834,7 @@ def seasonal_line(places):
     return f" {plural(n, 'place')} on this list {'notes a season' if n == 1 else 'note a season'}; seasonal is not closed." if n else ""
 
 
-# ---------------------------------------------------------------- the six themed guides
+# ---------------------------------------------------------------- the hand-checked guides (each once it holds MIN_GUIDE places)
 assert all(len(v) > 1 for v in L.values()), "the guide copy writes plural nouns"
 
 
@@ -804,144 +849,187 @@ def guide(k, h1, titles, descs, lede, about, list_name, noun="place"):
     <p>{APP_LINE}</p>""", G, noun, plural_noun, list_name)
 
 
-G = L["hotchicken"]
-guide("hotchicken", "Nashville hot chicken",
-      [f"Nashville Hot Chicken: {len(G)} Hand-Checked Places | {BRAND}", f"Nashville Hot Chicken Spots: {len(G)} Checked | {BRAND}",
-       f"Nashville Hot Chicken: {len(G)} Checked Shacks & Counters"],
-      [f"{plural(len(G), 'place')} for Nashville hot chicken, from Prince's to Bolton's and Hattie B's, each checked in {CHECKED} against a 2025–26 source, by region and town.",
-       f"Nashville hot chicken: {plural(len(G), 'shack')}, counters and restaurants, each checked in {CHECKED} against a 2025–26 source, listed by region and town."],
-      f"{plural(len(G), 'shack')}, counters and restaurants for Nashville hot chicken: fried chicken coated in a cayenne paste or rub, served on white bread with pickle chips. Each was checked in {CHECKED} against a 2025–26 source.",
-      """<h2>Cayenne, white bread, pickles</h2>
-    <p>Nashville hot chicken is fried chicken given a coat of cayenne, as an oily paste or a dry rub, and served on a slice of white bread with dill pickle chips on top. The Prince family's shack made it famous; Thornton Prince's version dates to the 1940s, and the James Beard Foundation named Prince's Hot Chicken Shack an America's Classic in 2013. Heat levels run from mild to dares, and most places ask before they fry.</p>""",
-      "Nashville hot chicken", "place")
-G = L["bbq"]
-guide("bbq", "Memphis barbecue",
-      [f"Memphis Barbecue: {len(G)} Hand-Checked Rib Joints | {BRAND}", f"Memphis BBQ: {len(G)} Checked Rib & Pork Joints | {BRAND}",
-       f"Memphis Barbecue: {len(G)} Checked Places for Ribs"],
-      [f"{plural(len(G), 'Memphis barbecue joint')} for dry-rub ribs, pulled pork and barbecue spaghetti, each checked in {CHECKED} against a 2025–26 source, by neighborhood.",
-       f"Memphis barbecue: {plural(len(G), 'place')} for dry-rub ribs, pork shoulder sandwiches with slaw and barbecue spaghetti, each checked in {CHECKED} against a 2025–26 source."],
-      f"{plural(len(G), 'Memphis joint')} for the city's barbecue: dry-rub ribs, chopped pork shoulder on a bun with slaw, and barbecue spaghetti. Each was checked in {CHECKED} against a 2025–26 source.",
-      """<h2>Dry rub, wet ribs, and spaghetti</h2>
-    <p>Memphis barbecue is pork: ribs cooked dry with a spice rub or wet with sauce, and shoulder chopped or pulled for sandwiches topped with coleslaw. Barbecue spaghetti, noodles tossed in sauce with smoked pork, is a Memphis side you won't find many other places. The Rendezvous, in a basement off a downtown alley, has served charcoal-grilled dry-rub ribs since 1948.</p>""",
-      "Memphis barbecue", "place")
-G = L["wholehog"]
-guide("wholehog", "Tennessee whole hog barbecue",
-      [f"Tennessee Whole Hog Barbecue: {len(G)} Checked Pits | {BRAND}", f"Whole Hog Barbecue in Tennessee: {len(G)} Checked Places",
-       f"West Tennessee Whole Hog BBQ: {len(G)} Hand-Checked Places"],
-      [f"{plural(len(G), 'Tennessee pit')} cooking West Tennessee-style whole hog barbecue, each checked in {CHECKED} against a 2025–26 source, listed by region and town.",
-       f"Whole hog barbecue in Tennessee: {plural(len(G), 'place')} that put a whole hog on the pit, each checked in {CHECKED} against a 2025–26 source, by region and town."],
-      f"{plural(len(G), 'place')} that cook whole hogs over wood, the old West Tennessee way, in Lexington, Nashville and the suburbs. Each was checked in {CHECKED} against a 2025–26 source.",
-      """<h2>The whole hog</h2>
-    <p>West Tennessee pitmasters cooked the whole hog over hickory coals for generations, and the meat comes chopped or pulled from every part of the pig. Most restaurants switched to shoulders long ago; the places here still put whole hogs on the pit, going by their own words or the state's tourism department.</p>""",
-      "Tennessee whole hog barbecue", "place")
-G = L["meat3"]
-guide("meat3", "Tennessee meat-and-threes",
-      [f"Tennessee Meat-and-Threes: {len(G)} Hand-Checked Places | {BRAND}", f"Meat-and-Three Restaurants in Tennessee: {len(G)} Checked",
-       f"Nashville & Tennessee Meat-and-Threes: {len(G)} Checked"],
-      [f"{plural(len(G), 'Tennessee meat-and-three')}: one meat and three sides off a steam table, in Nashville, Memphis and Jackson, each checked in {CHECKED} against a 2025–26 source.",
-       f"Meat-and-threes in Tennessee: {plural(len(G), 'place')} for one meat and three sides off the steam table, each checked in {CHECKED} against a 2025–26 source, by town."],
-      f"{plural(len(G), 'meat-and-three')}: pick one meat and three vegetables (macaroni and cheese counts) off a cafeteria line, with cornbread or a roll. Each was checked in {CHECKED} against a 2025–26 source.",
-      """<h2>One meat, three sides</h2>
-    <p>The meat-and-three is the Southern plate lunch: a daily meat, maybe fried chicken, roast beef or meatloaf, and three sides from a line of greens, beans, squash casserole and macaroni and cheese. Nashville's are institutions; Arnold's Country Kitchen is a James Beard America's Classic. Many serve weekday lunch only.</p>""",
-      "Tennessee meat-and-threes", "place")
-G = L["biscuits"]
-guide("biscuits", "Tennessee biscuits & country ham",
-      [f"Tennessee Biscuits & Country Ham: {len(G)} Checked Places", f"Biscuits & Country Ham in Tennessee: {len(G)} Checked | {BRAND}",
-       f"Tennessee Biscuits & Country Ham: {len(G)} Places | {BRAND}"],
-      [f"{plural(len(G), 'Tennessee place')} for biscuits and country ham, from the Loveless Cafe to Knoxville breakfast counters, each checked in {CHECKED} against a 2025–26 source.",
-       f"Biscuits and country ham in Tennessee: {plural(len(G), 'place')} from Nashville to Johnson City, each checked in {CHECKED} against a 2025–26 source, listed by town."],
-      f"{plural(len(G), 'place')} for scratch biscuits and salt-cured country ham, from Nashville's Loveless Cafe to East Tennessee breakfast counters. Each was checked in {CHECKED} against a 2025–26 source.",
-      """<h2>Biscuits and country ham</h2>
-    <p>Country ham is dry-cured with salt and aged, then sliced thin and fried, often with red-eye gravy; a hot biscuit is the usual place for it. Tennessee's breakfast counters bake theirs from scratch every morning. The Loveless Cafe on Highway 100 has served biscuits since 1951.</p>""",
-      "Tennessee biscuits and country ham", "place")
-G = L["pancakes"]
-guide("pancakes", "Smoky Mountains pancake houses",
-      [f"Smoky Mountains Pancake Houses: {len(G)} Checked | {BRAND}", f"Gatlinburg & Pigeon Forge Pancakes: {len(G)} Checked Places",
-       f"Smokies Pancake Houses: {len(G)} Hand-Checked Places | {BRAND}"],
-      [f"{plural(len(G), 'pancake house')} in Gatlinburg, Pigeon Forge and Sevierville, from the 1960 Pancake Pantry on, each checked in {CHECKED} against a 2025–26 source.",
-       f"Smokies pancake houses: {plural(len(G), 'place')} in Gatlinburg, Pigeon Forge and Sevierville for pancakes and breakfast, each checked in {CHECKED} against a 2025–26 source."],
-      f"{plural(len(G), 'pancake house')} along the Parkway in Gatlinburg, Pigeon Forge and Sevierville, where breakfast before a day in the Great Smoky Mountains is a tradition. Each was checked in {CHECKED} against a 2025–26 source.",
-      """<h2>Breakfast before the mountains</h2>
-    <p>Sevier County at the edge of the Great Smoky Mountains is full of pancake houses, and lines form early in summer and fall. The Pancake Pantry in Gatlinburg, open since 1960, bills itself as Tennessee's first. Most close by mid-afternoon.</p>""",
-      "Smoky Mountains pancake houses", "place")
+def towns_phrase(G, k=3):
+    """"Greenville, Raleigh, Ayden and 2 other towns": the towns with the most places on a list, then how many more."""
+    towns = [t for t, _ in Counter(p.city for p in G if p.city).most_common()]
+    if len(towns) <= k:
+        return join_words(towns)
+    return ", ".join(towns[:k]) + " and " + plural(len(towns) - k, "other town")
+
+
+def classic_line(G):
+    """The guide's America's Classics, named by the James Beard Foundation (a fact we can source), or nothing."""
+    ac = [p for p in G if p.h & 1]
+    return (f" {join_words([f'{e(p.name)} in {e(p.city)}' for p in ac])} {'is a' if len(ac) == 1 else 'are'} James Beard America's "
+            f"Classic{'' if len(ac) == 1 else 's'}.") if ac else ""
+
+
+if "bbqeast" in L:
+    G = L["bbqeast"]
+    guide("bbqeast", "Eastern North Carolina whole hog",
+          [f"Eastern North Carolina Barbecue: {len(G)} Hand-Checked Pits", f"Eastern NC Whole Hog Barbecue: {len(G)} Places | {BRAND}",
+           f"Eastern North Carolina Whole Hog: {len(G)} Checked Places"],
+          [f"{plural(len(G), 'place')} for Eastern North Carolina whole hog barbecue, chopped and dressed with vinegar and pepper, each checked in {CHECKED} against a 2025–26 source.",
+           f"Eastern North Carolina barbecue: {plural(len(G), 'place')} cooking the whole hog in {towns_phrase(G, 3)}, each checked in {CHECKED} against a 2025–26 source."],
+          f"{plural(len(G), 'place')} in the east of the state that cook the whole hog and season the chopped pork with a thin vinegar-and-pepper sauce, in {e(towns_phrase(G))}. Each was checked in {CHECKED} against a 2025–26 source.",
+          f"""<h2>The whole hog</h2>
+    <p>East of Raleigh, barbecue means the whole hog, cooked low and slow, chopped (at some pits with bits of crisp skin mixed back in) and dressed with vinegar, salt and red and black pepper. There's no tomato in the sauce. Coleslaw and cornbread or hushpuppies come alongside.{classic_line(G)}</p>""",
+          "Eastern North Carolina whole hog barbecue", "place")
+
+if "bbqlex" in L:
+    G = L["bbqlex"]
+    guide("bbqlex", "Lexington barbecue",
+          [f"Lexington-Style Barbecue: {len(G)} Hand-Checked Piedmont Pits", f"Lexington & Piedmont Barbecue: {len(G)} Checked | {BRAND}",
+           f"Lexington Barbecue: {len(G)} Hand-Checked Places | {BRAND}"],
+          [f"{plural(len(G), 'Piedmont pit')} for Lexington-style barbecue: pork shoulder with red dip and red slaw, each checked in {CHECKED} against a 2025–26 source, by town.",
+           f"Lexington barbecue: {plural(len(G), 'place')} for pit-cooked pork shoulder, dip and red slaw in {towns_phrase(G, 3)}, each checked in {CHECKED} against a 2025–26 source."],
+          f"{plural(len(G), 'place')} for Piedmont barbecue: pork shoulders cooked slowly, chopped or sliced, with a vinegar-and-tomato dip and red slaw, in {e(towns_phrase(G))}. Each was checked in {CHECKED} against a 2025–26 source.",
+          f"""<h2>Shoulders, dip and red slaw</h2>
+    <p>West of the Triangle, the Piedmont cooks pork shoulders rather than whole hogs, at the old places over hardwood coals, and serves them chopped, coarse-chopped or sliced. The sauce, called dip, is vinegar with tomato or ketchup and pepper, and the slaw is red: cabbage dressed with the same dip instead of mayonnaise. Lexington, in Davidson County, gave the style its name.{classic_line(G)}</p>""",
+          "Lexington and Piedmont barbecue", "place")
+
+if "hotdogs" in L:
+    G = L["hotdogs"]
+    guide("hotdogs", "Carolina hot dogs",
+          [f"Carolina Hot Dogs All the Way: {len(G)} Hand-Checked Places", f"North Carolina Hot Dogs: {len(G)} Hand-Checked Places",
+           f"Carolina Hot Dogs: {len(G)} Checked Stands | {BRAND}"],
+          [f"{plural(len(G), 'place')} for a Carolina hot dog all the way: chili, slaw, onions and mustard, in {towns_phrase(G, 2)}, each checked in {CHECKED} against a 2025–26 source.",
+           f"Carolina hot dogs: {plural(len(G), 'stand')} and counters serving dogs all the way, with chili, slaw, onions and mustard, each checked in {CHECKED} against a 2025–26 source."],
+          f"{plural(len(G), 'stand')} and counters for the North Carolina hot dog, ordered all the way: mustard, chili, chopped onions and coleslaw. Each was checked in {CHECKED} against a 2025–26 source.",
+          """<h2>All the way</h2>
+    <p>A North Carolina hot dog comes "all the way" with mustard, a fine meat chili, chopped onions and coleslaw, the slaw doing the job ketchup does elsewhere. Raleigh's Roast Grill has served hot wieners that way since 1940, and won't put ketchup on them.</p>""",
+          "Carolina hot dogs", "place")
+
+if "calabash" in L:
+    G = L["calabash"]
+    guide("calabash", "Calabash seafood",
+          [f"Calabash Seafood: {len(G)} Hand-Checked Places | {BRAND}", f"Calabash-Style Seafood: {len(G)} Hand-Checked Restaurants"],
+          [f"{plural(len(G), 'place')} for Calabash-style seafood, lightly breaded and quickly fried, in Calabash and along the coast, each checked in {CHECKED} against a 2025–26 source.",
+           f"Calabash seafood: {plural(len(G), 'place')} frying shrimp, oysters and fish the Calabash way, each checked in {CHECKED} against a 2025–26 source, listed by town."],
+          f"{plural(len(G), 'place')} for Calabash-style seafood: shrimp, oysters and fish in a light coating, fried quickly and served with hushpuppies. Each was checked in {CHECKED} against a 2025–26 source.",
+          """<h2>Calabash style</h2>
+    <p>Calabash, a fishing village at the state's southern edge, gave its name to a way of frying seafood: a light coating of flour or meal, a quick fry, and a heaping plate with hushpuppies and slaw.</p>""",
+          "Calabash seafood", "place")
+
+if "biscuits" in L:
+    G = L["biscuits"]
+    guide("biscuits", "North Carolina biscuits & livermush",
+          [f"North Carolina Biscuits & Livermush: {len(G)} Checked Places", f"NC Biscuits & Livermush: {len(G)} Hand-Checked | {BRAND}"],
+          [f"{plural(len(G), 'place')} for North Carolina biscuits and livermush, the Piedmont's fried pork-and-cornmeal breakfast, each checked in {CHECKED} against a 2025–26 source.",
+           f"{plural(len(G), 'place')} for scratch biscuits and livermush in {towns_phrase(G, 3)}, each checked in {CHECKED} against a 2025–26 source, listed by region and town."],
+          f"{plural(len(G), 'place')} for big scratch biscuits and for livermush, pork liver and cornmeal set in a loaf, sliced and fried crisp, in {e(towns_phrase(G))}. Each was checked in {CHECKED} against a 2025–26 source.",
+          """<h2>Biscuits and livermush</h2>
+    <p>Livermush is pork liver and other pork cooked with cornmeal and spices, set in a loaf, then sliced and fried. It belongs to the western Piedmont and the foothills, and Shelby holds a Liver Mush Festival. Biscuits are everywhere, from drive-thrus to sit-down biscuit kitchens.</p>""",
+          "North Carolina biscuits and livermush", "place")
+
+if "moravian" in L:
+    G = L["moravian"]
+    guide("moravian", "Moravian bakeries",
+          [f"Moravian Bakeries: {len(G)} Hand-Checked Places | {BRAND}", f"Moravian Sugar Cake & Cookies: {len(G)} Checked Bakeries"],
+          [f"{plural(len(G), 'bakery', 'bakeries')} for Moravian sugar cake and paper-thin spice cookies, in {towns_phrase(G, 2)}, each checked in {CHECKED} against a 2025–26 source.",
+           f"Moravian bakeries: {plural(len(G), 'place')} for sugar cake and thin Moravian cookies, each checked in {CHECKED} against a 2025–26 source, listed by region and town."],
+          f"{plural(len(G), 'bakery', 'bakeries')} for the Moravian baking of old Salem: yeasted sugar cake and spice cookies rolled paper-thin. Each was checked in {CHECKED} against a 2025–26 source.",
+          """<h2>Sugar cake and thin cookies</h2>
+    <p>The Moravians who founded Salem, now part of Winston-Salem, in 1766 brought their baking with them: sugar cake, a yeasted coffee cake pocked with butter and brown sugar, and spice cookies rolled paper-thin.</p>""",
+          "Moravian bakeries", "bakery")
 
 # ---------------------------------------------------------------- MICHELIN & James Beard
 MI_SHORT = {5: "3-Star", 4: "2-Star", 3: "1-Star", 2: "Bib Gourmand", 1: "Recommended"}
 mi_parts = [f"{words_num(MI_N[k])} {MI_SHORT[k]}" for k in (5, 4, 3, 2, 1) if MI_N.get(k)]
 N_MI = sum(MI_N.values())
 mi_line = (join_words(mi_parts) + (" restaurants" if N_MI != 1 else " restaurant")) if mi_parts else ""
-guide_page(HON_PATH, "Tennessee MICHELIN & James Beard restaurants", f"{BRAND} · honors current as of {CHECKED}",
-           [f"Tennessee MICHELIN & James Beard Restaurants | {BRAND}", "Tennessee MICHELIN Guide & James Beard Restaurants List",
-            f"MICHELIN & James Beard Restaurants in Tennessee | {BRAND}"],
-           [f"{plural(len(HON_L), 'Tennessee restaurant')} in the MICHELIN Guide American South or honored by the James Beard Foundation, listed by region and town.",
-            f"{plural(len(HON_L), 'Tennessee restaurant')} with a MICHELIN Guide distinction or a James Beard honor, from Nashville to Memphis and Knoxville, by region and town."],
-           f"{plural(len(HON_L), 'Tennessee restaurant')} recognized by MICHELIN or the James Beard Foundation. The MICHELIN Guide American South's 2026 selection lists {plural(N_MI, 'Tennessee place')} ({e(mi_line)}); {plural(N_JBF, 'place')} hold a James Beard award, a 2026 nomination or semifinalist nod, or an America's Classics award.",
+guide_page(HON_PATH, "North Carolina MICHELIN & James Beard restaurants", f"{BRAND} · honors current as of {CHECKED}",
+           [f"North Carolina MICHELIN & James Beard Restaurants", f"MICHELIN & James Beard Restaurants in North Carolina",
+            f"NC MICHELIN & James Beard Restaurants | {BRAND}"],
+           [f"{plural(len(HON_L), 'North Carolina restaurant')} in the MICHELIN Guide American South or honored by the James Beard Foundation, listed by region and town.",
+            f"{plural(len(HON_L), 'North Carolina restaurant')} with a MICHELIN Guide distinction or a James Beard honor, from Asheville to Charlotte and Raleigh, by region and town."],
+           f"{plural(len(HON_L), 'North Carolina restaurant')} recognized by MICHELIN or the James Beard Foundation. The MICHELIN Guide American South's 2026 selection lists {plural(N_MI, 'North Carolina place')} ({e(mi_line)}); {plural(N_JBF, 'place')} hold a James Beard award, a 2026 nomination or semifinalist nod, or an America's Classics award.",
            f"""<h2>What counts as an honor here</h2>
-    <p>Two sources, both reported as facts rather than scores. One is the MICHELIN Guide American South, which first covered Tennessee in November 2025 and revealed its 2026 selection in Nashville in October 2026, as MICHELIN lists it. The other is the James Beard Foundation: its winners, its 2026 nominee and semifinalists, and America's Classics awards from any year ({plural(N_CLASSICS, 'place')}). Semifinalists are labeled as exactly that, and where an honor went to a chef, the line under the place says so. Reader polls, "best of" roundups and review-site stars don't count.</p>
+    <p>Two sources, both reported as facts rather than scores. One is the MICHELIN Guide American South, which first covered North Carolina in 2025 and revealed its 2026 selection in October 2026, as MICHELIN lists it. The other is the James Beard Foundation: its winners, its 2026 nominees and semifinalists, and America's Classics awards from any year ({plural(N_CLASSICS, 'place')}). Semifinalists are labeled as exactly that, and where an honor went to a chef, the line under the place says so. Reader polls, "best of" roundups and review-site stars don't count.</p>
     <p class="fine">MICHELIN and the MICHELIN Guide are trademarks of Michelin. James Beard Foundation and James Beard Award are trademarks of the James Beard Foundation. {BRAND} is not affiliated with either.</p>""",
-           HON_L, "restaurant", "restaurants", "Tennessee MICHELIN Guide and James Beard restaurants", honors=True)
+           HON_L, "restaurant", "restaurants", "North Carolina MICHELIN Guide and James Beard restaurants", honors=True)
 
-# ---------------------------------------------------------------- oldest
-oldest_named = next((p for p in OLD_L if p.promo_ok()), None)
-assert all(p.founded <= 1960 for p in OLD_L), "the oldest-places copy says 'since 1960 or earlier'"
-assert len(OLD_L) > 1, "the oldest-places copy writes plural nouns"
-from_line = f" The oldest, {e(oldest_named.name)} in {e(oldest_named.city)}, goes back to {oldest_named.founded}." if oldest_named else ""
-guide_page(OLD_PATH, "Tennessee's oldest restaurants", checked_kicker(),
-           [f"Tennessee's Oldest Restaurants: {len(OLD_L)} Places, Oldest First", f"Oldest Restaurants in Tennessee: {len(OLD_L)} Places | {BRAND}",
-            "Tennessee's Oldest Restaurants, Year by Year | Tennessee Eats"],
-           [f"{plural(len(OLD_L), 'Tennessee restaurant')} open since 1960 or earlier, oldest first, each with a note on the dated source its year rests on, from Mason to Gatlinburg.",
-            f"Tennessee's oldest restaurants: {plural(len(OLD_L), 'place')} open since 1960 or earlier, oldest first, with the dated source behind each founding year."],
-           f"Barbecue pits, soul-food kitchens and breakfast counters that have fed Tennessee since 1960 or before: {plural(len(OLD_L), 'place')} in all, oldest first, each checked in {CHECKED} against a 2025–26 source.{from_line} The note under each place names what its year rests on.",
-           f"""<h2>Which year counts</h2>
-    <p>We count from the year a place opened as it stands today, going by a dated 2025–26 source that ties the year to it. A brand's earlier start somewhere else doesn't count, and neither do the years before a move, which is why Memphis's Leonard's (1922) and Dyer's (1912) aren't here. If two sources give different years, the later one wins. Know a Tennessee place from 1960 or earlier that's missing? Send us the source.</p>""",
-           OLD_L, "place", "places", "Tennessee's oldest restaurants", region=False, show_fn=True)
+# ---------------------------------------------------------------- oldest (a page once the research holds MIN_GUIDE places)
+if HAS_OLD:
+    oldest_named = next((p for p in OLD_L if p.promo_ok()), None)
+    assert all(p.founded <= 1960 for p in OLD_L), "the oldest-places copy says 'since 1960 or earlier'"
+    from_line = f" The oldest, {e(oldest_named.name)} in {e(oldest_named.city)}, goes back to {oldest_named.founded}." if oldest_named else ""
+    guide_page(OLD_PATH, "North Carolina's oldest restaurants", checked_kicker(),
+               [f"North Carolina's Oldest Restaurants: {len(OLD_L)} Places", f"Oldest Restaurants in North Carolina: {len(OLD_L)} Places",
+                f"North Carolina's Oldest Restaurants, Year by Year"],
+               [f"{plural(len(OLD_L), 'North Carolina restaurant')} open since 1960 or earlier, oldest first, each with a note on the dated source its year rests on.",
+                f"North Carolina's oldest restaurants: {plural(len(OLD_L), 'place')} open since 1960 or earlier, oldest first, with the dated source behind each founding year."],
+               f"Barbecue pits, lunch counters and seafood houses that have fed North Carolina since 1960 or before: {plural(len(OLD_L), 'place')} in all, oldest first, each checked in {CHECKED} against a 2025–26 source.{from_line} The note under each place names what its year rests on.",
+               """<h2>Which year counts</h2>
+    <p>We count from the year a place opened as it stands today, going by a dated 2025–26 source that ties the year to it. A brand's earlier start somewhere else doesn't count, and neither do the years before a move. If two sources give different years, the later one wins. Know a North Carolina place from 1960 or earlier that's missing? Send us the source.</p>""",
+               OLD_L, "place", "places", "North Carolina's oldest restaurants", region=False, show_fn=True)
 
-# ---------------------------------------------------------------- how to check an inspection (no scores are copied or named here)
+# ---------------------------------------------------------------- the grades explainer (counts only: no place is named or listed by score)
 url = f"{DOMAIN}/{INS_PATH}"
-nav, bc = crumbs([("Home", "/"), ("Tennessee restaurant inspections", "/" + INS_PATH)])
-title = fit(["How to Check a Tennessee Restaurant Inspection | Tennessee Eats", "Tennessee Restaurant Inspections: Where to Look | Tennessee Eats",
-             "Tennessee Restaurant Inspections, Explained | Tennessee Eats"], 50, 60, "inspections title")
-desc = fit(["Tennessee's Department of Health and five county health departments post restaurant inspection reports in one search. Here is where to find them.",
-            "Where Tennessee posts restaurant inspection reports and scores: the Department of Health's search, which covers all 95 counties. No grades of ours."],
-           140, 160, "inspections description")
+n_ins = len(INS_L)
+nav, bc = crumbs([("Home", "/"), ("North Carolina restaurant grades", "/" + INS_PATH)])
+title = fit(["North Carolina Restaurant Grades: A, B and C, Explained", "How North Carolina Restaurant Grades Work | NC Eats",
+             "North Carolina Restaurant Grades & Inspections, Explained"], 50, 60, "grades title")
+desc = fit([f"How North Carolina grades restaurants A, B or C from the inspection score, Wake County's published scores for {n_ins:,} places, and each county's records.",
+            f"North Carolina's A, B and C restaurant grades come from the inspection score. What they mean, Wake County's scores for {n_ins:,} places, and every county's link.",
+            f"What North Carolina's A, B and C restaurant grade cards mean, Wake County's published scores for {n_ins:,} places, and where each county posts its reports."],
+           140, 160, "grades description")
+grade_items = "".join(f'<li><span class="card-grade">{e(g)}</span> {plural(GRADE_N.get(g, 0), "place")}</li>' for g in RESULTS)
+counties_html = '<ul class="cities">' + "".join(f'<li><a href="{e(portal_url(c))}" rel="noopener">{e(c.removesuffix(" County"))}</a></li>'
+                                                for c in sorted(COUNTY_NO, key=COUNTY_NO.get)) + "</ul>"
 body = f"""{nav}
   <main id="main">
   <section class="hero">
     <p class="kicker">{BRAND} guide · public records</p>
-    <h1>Checking a Tennessee restaurant inspection</h1>
-    <p class="lede">Tennessee's restaurant inspections are public, but they aren't published as data. The Department of Health inspects restaurants in most counties, and the health departments of Davidson, Shelby, Knox, Hamilton and Madison counties inspect their own under the same state rule. Each report, with its score, goes into one search.</p>
-    <div class="cta-row"><a class="btn" href="{TDH_URL}" rel="noopener">Search inspection reports</a></div>
+    <h1>North Carolina restaurant grades, explained</h1>
+    <p class="lede">A North Carolina restaurant hangs its grade card from the county health department where customers see it on the way in, as the state's rules require, and a new card goes up after every inspection. The letter comes from the inspection score under a state rule, 15A NCAC 18A .2662: A for a score of 90 or more, B for 80 to under 90, C for 70 to under 80. Below 70, the permit is revoked.</p>
+    <div class="cta-row"><a class="btn" href="#portal">Find your county's inspections</a><a class="btn btn-ghost" href="{GRADING_RULES}" rel="noopener">The state's rules (PDF)</a></div>
   </section>
-  <section id="how">
-    <h2>What you'll find there</h2>
-    <p class="sub">The search covers all 95 counties. Look a place up by name or town, and open its latest report for the score, from 0 to 100, and the violations the inspector noted. Davidson, Shelby and Hamilton counties send people to the same search from their own sites.</p>
-    <p>{BRAND} shows no scores and computes no grade of its own. The search is for looking places up one at a time; it offers no download, and its robots.txt asks automated tools to stay away, so we link it rather than copy it. One inspection is a snapshot of one day.</p>
+  <section id="wake">
+    <h2>Wake County's scores</h2>
+    <p class="sub">Wake County is the one county that publishes its food service permits and inspections as open data. For {plural(n_ins, "Wake County place")} we list, the app and the <a href="/explore/#g=inspections">web search</a> show the latest score and the letter it earns, the date, earlier inspections and the items the inspector cited, in the county's words. Records through {e(hdate(INS_THROUGH))}.</p>
+    <p>At their latest inspection, by the county's score:</p>
+    <ul class="grades">{grade_items}</ul>
+    <p>The letter is the one rule .2662 assigns to the county's own score, so it matches the card by the door; {BRAND} computes no grade of its own, and a score the county didn't publish shows as a dash. Points come off for each Food Code item the inspector finds out of compliance. One inspection is a snapshot of one day. No page here lists places by score; the web search can sort Wake's list by it.</p>
+    <p class="fine">Source: Wake County Environmental Health &amp; Safety, <a href="{WAKE_PERMITS}" rel="noopener">Restaurants in Wake County</a> and <a href="{WAKE_INSPECTIONS}" rel="noopener">Food Inspections</a>, Wake County Open Data, CC BY 4.0, retrieved {e(hdate(PERMITS_UPDATED))}; filtered and matched to map listings, with inspectors' names and comments left out. Wake County's notice: “Wake County Geographic Information Services shall not be held liable for any errors in these data. This includes errors of omission, commission, errors concerning the content of the data, and relative and positional accuracy of the data. These data cannot be construed to be a legal document. Primary sources from which these data were compiled must be consulted for verification of information contained in these data.”</p>
+  </section>
+  <section id="portal">
+    <h2>Every county's inspections</h2>
+    <p class="sub">The other 99 counties post their inspections only in the state's inspection search, run for NC DHHS, county by county: each report with its date, score and grade. It isn't published as open data, so we link each county's page and copy nothing. In the app and the web search, every place outside Wake links its own county's page.</p>
+    {counties_html}
+    <p class="fine">Some health departments also give sanitation awards; under the rule, an award must look different from a grade card and say "award". They aren't grades, and we don't show them.</p>
   </section>
   <section id="lookup">
-    <h2>What {BRAND} does show</h2>
-    <p>Every place in the app and on the <a href="/explore/">web search</a> links to the state's inspection search. In Davidson County, we also show whether a place holds an on-site beer permit from Metro Nashville's Beer Permit Board. The rest is hand-checked research and honors from the MICHELIN Guide and the James Beard Foundation.</p>
+    <h2>What else {BRAND} shows</h2>
+    <p>In Wake County, a place's food service permit number. Alcohol shows as unknown everywhere, never as no: North Carolina's ABC permits aren't published as a list. The rest is hand-checked research and honors from the MICHELIN Guide and the James Beard Foundation.</p>
     <p class="fine">{other_guides("/" + INS_PATH)}</p>
   </section>
   </main>"""
-page(INS_PATH, title, desc, body, [article_ld(url, "Checking a Tennessee restaurant inspection", desc), bc])
+page(INS_PATH, title, desc, body, [article_ld(url, "North Carolina restaurant grades, explained", desc), bc])
 
 # ---------------------------------------------------------------- city pages
 city_stats = {}
-SEC_DEFS = [  # key, long title phrase, short title phrase, h1 phrase, description phrase builder
-    ("hotchicken", "Hot Chicken", "Hot Chicken", "hot chicken", lambda n: plural(n, "hand-checked hot chicken spot")),
-    ("bbq", "Memphis Barbecue", "Barbecue", "barbecue", lambda n: plural(n, "Memphis barbecue joint")),
-    ("wholehog", "Whole Hog Barbecue", "Whole Hog", "whole hog", lambda n: plural(n, "whole hog pit")),
-    ("meat3", "Meat-and-Threes", "Meat-and-Threes", "meat-and-threes", lambda n: plural(n, "meat-and-three")),
-    ("biscuits", "Biscuits & Country Ham", "Biscuits", "biscuits", lambda n: plural(n, "biscuit and country ham place")),
-    ("pancakes", "Pancake Houses", "Pancakes", "pancake houses", lambda n: plural(n, "pancake house")),
+SEC_DEFS = [  # key, long title phrase, short title phrase, h1 phrase, description phrase builder (guides with a page only)
+    (k, *v) for k, *v in [
+        ("bbqeast", "Eastern Whole Hog", "Whole Hog", "whole hog barbecue", lambda n: plural(n, "hand-checked whole hog pit")),
+        ("bbqlex", "Lexington Barbecue", "Barbecue", "Lexington barbecue", lambda n: plural(n, "Lexington barbecue joint")),
+        ("hotdogs", "Carolina Hot Dogs", "Hot Dogs", "hot dogs", lambda n: plural(n, "Carolina hot dog stand")),
+        ("calabash", "Calabash Seafood", "Seafood", "Calabash seafood", lambda n: plural(n, "Calabash seafood house")),
+        ("biscuits", "Biscuits & Livermush", "Biscuits", "biscuits", lambda n: plural(n, "biscuit and livermush place")),
+        ("moravian", "Moravian Bakeries", "Bakeries", "Moravian bakeries", lambda n: plural(n, "Moravian bakery", "Moravian bakeries")),
+    ] if k in L
 ]
 SEC_ORDER = [k for k, *_ in SEC_DEFS] + ["hon", "oldest"]
 CITY_INFO = {}
+# a town's county: the one most of its places are in (a city page outside Wake links that county's page in the state's search)
+COUNTY_OF = {c: Counter(p.county for p in REST if p.city == c and p.county).most_common(1)[0][0] for c in CITY_PAGES}
 for c in CITY_PAGES:
     here = [p for p in REST if p.city == c]
     info = {k: sorted([p for p in L[k] if p.city == c], key=P.featured_key) for k, _ in GUIDE_TAGS}
     info["hon"] = sorted([p for p in HON_L if p.city == c], key=P.featured_key)
-    info["oldest"] = [p for p in OLD_L if p.city == c]
+    info["oldest"] = [p for p in OLD_L if p.city == c] if HAS_OLD else []
+    info["ins"] = [p for p in INS_L if p.city == c]
+    info["wake"] = any(p.county == "Wake County" for p in here)
     info["cuis"] = Counter(p.cuisine for p in here if p.cuisine and p.cuisine not in ("Other", "American & Other")).most_common(10)
     info["n_town"] = len(here)
     listed, seen = [], set()
@@ -951,7 +1039,7 @@ for c in CITY_PAGES:
                 seen.add(id(p)); listed.append(p)
     info["listed"] = listed
     CITY_INFO[c] = info
-    city_stats[c] = {"restaurants": len(here), "listed": len(listed), **{k: len(info[k]) for k in SEC_ORDER}}
+    city_stats[c] = {"restaurants": len(here), "listed": len(listed), "wake_inspected": len(info["ins"]), **{k: len(info[k]) for k in SEC_ORDER}}
 
 
 def city_sections(info):
@@ -963,10 +1051,10 @@ def city_sections(info):
         out.append(("hon", long, "MICHELIN" if has_mi else "James Beard", long if long != "James Beard" else "James Beard honorees",
                     plural(len(info["hon"]), "MICHELIN or James Beard honoree")))
     if info["oldest"]:
-        k_old = len(info["oldest"])   # "1 of Tennessee's oldest restaurants", not "the oldest restaurants" (one place isn't the town's all)
+        k_old = len(info["oldest"])   # "1 of North Carolina's oldest restaurants", not "the oldest restaurants" (one place isn't the town's all)
         out.append(("oldest", "Oldest Restaurants", "Oldest Places", "oldest restaurants",
-                    f"1 of Tennessee's oldest restaurants (from {info['oldest'][0].founded})" if k_old == 1
-                    else f"{k_old} of Tennessee's oldest restaurants (back to {info['oldest'][0].founded})"))
+                    f"1 of North Carolina's oldest restaurants (from {info['oldest'][0].founded})" if k_old == 1
+                    else f"{k_old} of North Carolina's oldest restaurants (back to {info['oldest'][0].founded})"))
     return sorted(out, key=lambda s: (-len(info[s[0]]), SEC_ORDER.index(s[0])))
 
 
@@ -983,24 +1071,26 @@ def city_title(c, secs):
         for col in (1, 2):
             J = tjoin([s[col] for s in secs[:k]])
             # "<town> restaurants" is what people search, so those forms come first
-            forms = ([f"{c} Restaurants: {J}", f"{c}, TN Restaurants: {J}", f"{c} Restaurants: {J} | {BRAND}", f"{c}, Tennessee Restaurants: {J}"]
+            forms = ([f"{c} Restaurants: {J}", f"{c}, NC Restaurants: {J}", f"{c} Restaurants: {J} | NC Eats", f"{c}, North Carolina Restaurants: {J}"]
                      if "Restaurant" not in J else [])
-            forms += [f"{c} {J} | {BRAND}", f"{c}, TN {J} | {BRAND}", f"{c}, Tennessee {J}", f"{c}, TN {J}", f"{c} {J}"]
+            forms += [f"{c} {J} | {BRAND}", f"{c}, NC {J} | {BRAND}", f"{c}, North Carolina {J}", f"{c}, NC {J}", f"{c} {J}"]
             if "Restaurant" not in J:
-                forms += [f"{c} {J} & Restaurants", f"{c} {J} & Restaurants | {BRAND}", f"{c}, Tennessee {J} & Restaurants"]
+                forms += [f"{c} {J} & Restaurants", f"{c} {J} & Restaurants | NC Eats", f"{c}, North Carolina {J} & Restaurants"]
             cands += forms
-    cands += [f"{c} Restaurants: What {c} Eats | {BRAND}", f"{c}, Tennessee Restaurants by Kind | {BRAND}", f"{c}, TN Restaurants, Cafés & Bars | {BRAND}",
-              f"{c}, Tennessee Restaurants, Cafés and Bars", f"{c} Restaurants, Cafés & Bars | {BRAND}", f"{c}, Tennessee: Restaurants, BBQ & More | {BRAND}",
-              f"{c}, TN: Hot Chicken, BBQ & Restaurants | {BRAND}", f"{c}, Tennessee: Restaurants & Places to Eat | {BRAND}"]
+    cands += [f"{c} Restaurants: What {c} Eats | {BRAND}", f"{c}, North Carolina Restaurants by Kind", f"{c}, NC Restaurants, Cafés & Bars | {BRAND}",
+              f"{c}, North Carolina Restaurants, Cafés and Bars", f"{c} Restaurants, Cafés & Bars | {BRAND}", f"{c}, NC: Restaurants, BBQ & More | {BRAND}",
+              f"{c}, NC: Barbecue, Grades & Restaurants | {BRAND}", f"{c}, North Carolina: Restaurants & Places to Eat", f"{c}, NC Restaurants & Places to Eat | {BRAND}"]
     return fit(cands, 50, 60, c + " title")
 
 
 def city_desc(c, info, secs):
     n_town = info["n_town"]
-    leads = [f"In {c}, Tennessee", f"{c}, Tennessee", f"{c}, TN"]
+    leads = [f"In {c}, North Carolina", f"{c}, North Carolina", f"{c}, NC"]
     tails = [f". Search {n_town:,} {c} restaurants, cafés and bars", f". Search {n_town:,} local places to eat",
              f", plus {n_town:,} local places to eat on a searchable map", f", plus {n_town:,} more local places to eat", ""]
     extras = ["", f" Checked in {CHECKED}.", " Free iPhone app coming soon.", f" Checked in {CHECKED}. Free iPhone app coming soon."]
+    if info["ins"]:   # a Wake town: its places carry the county's own scores
+        tails = [t + (" with Wake County's grades" if t else "") for t in tails] + tails
 
     def gen():
         for k in range(len(secs), 0, -1):
@@ -1012,11 +1102,12 @@ def city_desc(c, info, secs):
     return fit(list(dict.fromkeys(s.replace("..", ".") for s in gen())), 140, 160, c + " description")
 
 
-SEC_HEAD = {"hotchicken": ("Hot chicken", "hotchicken"), "bbq": ("Memphis barbecue", "bbq"), "wholehog": ("Whole hog barbecue", "wholehog"),
-            "meat3": ("Meat-and-threes", "meat3"), "biscuits": ("Biscuits and country ham", "biscuits"), "pancakes": ("Pancake houses", "pancakes")}
-GUIDE_COUNT_NOUN = {"hotchicken": "Tennessee hot chicken spots", "bbq": "Memphis barbecue joints", "wholehog": "Tennessee whole hog pits",
-                    "meat3": "Tennessee meat-and-threes", "biscuits": "biscuit and country ham places", "pancakes": "Smokies pancake houses"}
-SINGULAR = {"Smokies pancake houses": "Smokies pancake house", "biscuit and country ham places": "biscuit and country ham place"}
+SEC_HEAD = {"bbqeast": ("Eastern whole hog barbecue", "bbqeast"), "bbqlex": ("Lexington barbecue", "bbqlex"), "hotdogs": ("Carolina hot dogs", "hotdogs"),
+            "calabash": ("Calabash seafood", "calabash"), "biscuits": ("Biscuits and livermush", "biscuits"), "moravian": ("Moravian bakeries", "moravian")}
+GUIDE_COUNT_NOUN = {"bbqeast": "Eastern whole hog pits", "bbqlex": "Lexington and Piedmont barbecue joints", "hotdogs": "Carolina hot dog stands",
+                    "calabash": "Calabash seafood houses", "biscuits": "biscuit and livermush places", "moravian": "Moravian bakeries"}
+SINGULAR = {"biscuit and livermush places": "biscuit and livermush place", "Moravian bakeries": "Moravian bakery",
+            "Calabash seafood houses": "Calabash seafood house"}
 
 for c in CITY_PAGES:
     info = CITY_INFO[c]
@@ -1040,7 +1131,7 @@ for c in CITY_PAGES:
     parts = [f"""{nav}
   <main id="main">
   <section class="hero">
-    <p class="kicker">{BRAND} · {e(c)}, Tennessee</p>
+    <p class="kicker">{BRAND} · {e(c)}, North Carolina</p>
     <h1>{e(h1)}</h1>
     <p class="lede">{lede}</p>
     <div class="cta-row">{store_button()}<span class="pill store-note">{STORE_NOTE}</span></div>
@@ -1049,18 +1140,32 @@ for c in CITY_PAGES:
         key = s[0]
         if key in SEC_HEAD:
             head, gk = SEC_HEAD[key]
-            parts.append(f'<section id="{key}" aria-labelledby="h-{key}"><h2 id="h-{key}">{e(head)} in {e(c)}</h2><p class="sub">Each one checked in {CHECKED} against a 2025–26 source. For all of Tennessee: <a href="/{GUIDE_PATH[gk]}">{plural(len(L[gk]), SINGULAR.get(GUIDE_COUNT_NOUN[gk], GUIDE_COUNT_NOUN[gk][:-1]), GUIDE_COUNT_NOUN[gk])}</a>.</p><ol class="places">'
+            parts.append(f'<section id="{key}" aria-labelledby="h-{key}"><h2 id="h-{key}">{e(head)} in {e(c)}</h2><p class="sub">Each one checked in {CHECKED} against a 2025–26 source. For all of North Carolina: <a href="/{GUIDE_PATH[gk]}">{plural(len(L[gk]), SINGULAR.get(GUIDE_COUNT_NOUN[gk], GUIDE_COUNT_NOUN[gk][:-1]), GUIDE_COUNT_NOUN[gk])}</a>.</p><ol class="places">'
                          + "".join(place_item(p, anchors) for p in info[key]) + "</ol></section>")
         elif key == "hon":
-            parts.append(f'<section id="honors" aria-labelledby="h-honors"><h2 id="h-honors">MICHELIN &amp; James Beard in {e(c)}</h2><p class="sub">Restaurants in the MICHELIN Guide American South or named by the James Beard Foundation, reported as facts rather than scores. Across Tennessee: <a href="/{HON_PATH}">{plural(len(HON_L), "Tennessee MICHELIN and James Beard restaurant")}</a>.</p><ol class="places">'
+            parts.append(f'<section id="honors" aria-labelledby="h-honors"><h2 id="h-honors">MICHELIN &amp; James Beard in {e(c)}</h2><p class="sub">Restaurants in the MICHELIN Guide American South or named by the James Beard Foundation, reported as facts rather than scores. Across North Carolina: <a href="/{HON_PATH}">{plural(len(HON_L), "North Carolina MICHELIN and James Beard restaurant")}</a>.</p><ol class="places">'
                          + "".join(place_item(p, anchors, honors=True) for p in info["hon"]) + "</ol></section>")
         elif key == "oldest":
-            parts.append(f'<section id="oldest" aria-labelledby="h-oldest"><h2 id="h-oldest">Oldest restaurants in {e(c)}</h2><p class="sub">Open since 1960 or before, going by a dated source, listed from the oldest. Each note gives the source of the year. Across Tennessee: <a href="/{OLD_PATH}">Tennessee\'s oldest restaurants</a>.</p><ol class="places">'
+            parts.append(f'<section id="oldest" aria-labelledby="h-oldest"><h2 id="h-oldest">Oldest restaurants in {e(c)}</h2><p class="sub">Open since 1960 or before, going by a dated source, listed from the oldest. Each note gives the source of the year. Across North Carolina: <a href="/{OLD_PATH}">North Carolina\'s oldest restaurants</a>.</p><ol class="places">'
                          + "".join(place_item(p, anchors, show_fn=True) for p in info["oldest"]) + "</ol></section>")
+    if info["ins"]:   # Wake County's own scores, as counts: no place is listed by its score here
+        ig = Counter(p.grade for p in info["ins"])
+        bits = join_words([f"{g} ({ig[g]:,})" for g in RESULTS if ig.get(g)])
+        parts.append(f'<section id="inspections" aria-labelledby="h-inspections"><h2 id="h-inspections">Inspection grades in {e(c)}</h2><p class="sub">'
+                     f"Wake County publishes its inspections, and {plural(len(info['ins']), 'place')} we list in {e(c)} have a published score. At their "
+                     f"latest inspection, by the grade the county's score earns: {e(bits)}. Records through {e(hdate(INS_THROUGH))}. Each place's score, "
+                     f'date and cited items are in the <a href="/explore/#g=inspections&amp;town={e(urllib.parse.quote(c))}">web search</a>; what the '
+                     f'letters mean: <a href="/{INS_PATH}">North Carolina restaurant grades, explained</a>.</p></section>')
+    elif c in COUNTY_OF:
+        parts.append(f'<section id="inspections" aria-labelledby="h-inspections"><h2 id="h-inspections">Inspection grades in {e(c)}</h2><p class="sub">'
+                     f"{e(COUNTY_OF[c])} posts its inspection reports, with each score and grade, in the state's inspection search: "
+                     f'<a href="{e(portal_url(COUNTY_OF[c]))}" rel="noopener">{e(COUNTY_OF[c])}\'s inspections</a>. It isn\'t published as data, so we link it '
+                     f'and copy nothing. What the letters mean: <a href="/{INS_PATH}">North Carolina restaurant grades, explained</a>.</p></section>')
     if info["cuis"]:
         rows = "".join(f'<tr><td>{e(k)}</td><td class="n">{n:,}</td></tr>' for k, n in info["cuis"])
-        parts.append(f'<section id="cuisines" aria-labelledby="h-cuisines"><h2 id="h-cuisines">What {e(c)} eats</h2><p class="sub">Kinds of food among the {info["n_town"]:,} places we list in {e(c)}, counted from open map data and Metro Nashville’s beer permits.</p><table><thead><tr><th scope="col">Kind of place</th><th scope="col" class="n">Places</th></tr></thead><tbody>{rows}</tbody></table></section>')
-    parts.append(f'<section id="more" aria-labelledby="h-more"><h2 id="h-more">Other Tennessee towns with a page</h2>{city_links(current=c)}<p class="fine"><a href="/cities/">The cities and towns index</a></p></section>\n  </main>')
+        srcs = "open map data and Wake County’s permits" if info["wake"] else "open map data"
+        parts.append(f'<section id="cuisines" aria-labelledby="h-cuisines"><h2 id="h-cuisines">What {e(c)} eats</h2><p class="sub">Kinds of food among the {info["n_town"]:,} places we list in {e(c)}, counted from {srcs}.</p><table><thead><tr><th scope="col">Kind of place</th><th scope="col" class="n">Places</th></tr></thead><tbody>{rows}</tbody></table></section>')
+    parts.append(f'<section id="more" aria-labelledby="h-more"><h2 id="h-more">Other North Carolina towns with a page</h2>{city_links(current=c)}<p class="fine"><a href="/cities/">The cities and towns index</a></p></section>\n  </main>')
     lds = [article_ld(url, h1, desc), bc]
     if info["listed"]:
         lds.append(item_list(f"{c}: " + join_words([s[3] for s in secs]), info["listed"], url, anchors))
@@ -1077,10 +1182,11 @@ for c in CITY_PAGES:
     line = (join_words(bits) + ". " if bits else "") + f"{info['n_town']:,} places to eat in all."
     cards.append(f'<a class="card" href="{city_url(c)}"><h3>{e(c)}</h3><p>{e(line[0].upper() + line[1:])}</p></a>')
 first, last = CITY_PAGES[:2], CITY_PAGES[-2:]
-title = fit([f"Tennessee Cities & Towns: Restaurant Guides | {BRAND}", f"Tennessee City Restaurant Guides: {len(CITY_PAGES)} Towns | {BRAND}"], 50, 60, "cities title")
-desc = fit([f"Restaurant guides for {len(CITY_PAGES)} Tennessee cities and towns, from {join_words(first)} to {join_words(last)}: hot chicken, barbecue and honors.",
-            f"City-by-city Tennessee restaurant guides for {len(CITY_PAGES)} cities and towns: hot chicken, Memphis barbecue, meat-and-threes, pancakes and more.",
-            f"Restaurant guides for {len(CITY_PAGES)} Tennessee cities and towns: hot chicken, Memphis barbecue, whole hog, meat-and-threes, MICHELIN and James Beard."],
+title = fit([f"North Carolina Cities & Towns: Restaurant Guides", f"North Carolina City Restaurant Guides: {len(CITY_PAGES)} Towns",
+             f"NC Cities & Towns: Restaurant Guides | {BRAND}"], 50, 60, "cities title")
+desc = fit([f"Restaurant guides for {len(CITY_PAGES)} North Carolina cities and towns, from {join_words(first)} to {join_words(last)}: barbecue, MICHELIN and James Beard.",
+            f"City-by-city North Carolina restaurant guides for {len(CITY_PAGES)} cities and towns: Eastern and Lexington barbecue, hot dogs, biscuits and honors.",
+            f"Restaurant guides for {len(CITY_PAGES)} North Carolina cities and towns: whole hog and Lexington barbecue, hot dogs, biscuits, MICHELIN and James Beard."],
            140, 160, "cities description")
 skipped_line = (f" Other towns get a page once they have at least {MIN_LISTED} hand-checked or honored places; until then, "
                 f'<a href="/explore/">search them</a>.')
@@ -1088,8 +1194,8 @@ body = f"""{nav}
   <main id="main">
   <section class="hero">
     <p class="kicker">{BRAND} · cities and towns</p>
-    <h1>Tennessee cities and towns</h1>
-    <p class="lede">A page for Tennessee cities and towns that have enough hand-checked or honored places to say something real: the hot chicken, Memphis barbecue, whole hog pits, meat-and-threes, biscuit counters, pancake houses, MICHELIN and James Beard honorees and oldest restaurants that are actually there.{skipped_line}</p>
+    <h1>North Carolina cities and towns</h1>
+    <p class="lede">A page for North Carolina cities and towns that have enough hand-checked or honored places to say something real: the whole hog and Lexington barbecue, hot dog stands, biscuit counters and MICHELIN and James Beard honorees that are actually there, with Wake County's inspection grades in Wake towns.{skipped_line}</p>
   </section>
   <section id="cities-list">
     <h2>Pick a town</h2>
@@ -1103,11 +1209,12 @@ page("cities/index.html", title, desc, body, [bc], og_type="website")
 # Three kinds of file, to keep the first load small for ~17,000 places:
 # - core.json: the list, search and map columns. Places are ordered by region, county, town, zip and street, so neighbouring rows
 #   share their town, zip and street words and gzip well; coordinates are integer steps of 0.0001° from the previous row ("dla"/"dlo"),
-#   and the latest inspection is [county, rating] plus a day number from 2000-01-01 ("idn").
+#   and Wake County's latest inspection is its grade ("ib", an index into results), its score ("isc") and a day number from 2000-01-01
+#   ("idn").
 # - ids.json: each place's stable id (the app's id), in core order. Fetched right after the list renders; saved places and shared
 #   #p= links wait for it.
 # - detail-<county>.json: phones, websites, notes, county and city records and inspection histories, keyed by core index,
-#   one file per county (Davidson's is the biggest), fetched when someone opens (or points at) a place there.
+#   one file per county (Wake's is the biggest), fetched when someone opens (or points at) a place there.
 os.makedirs(f"{DOCS}/data", exist_ok=True)
 DFILES = [slug(c) for c in COUNTIES] + ["other"]   # detail file per county index; "other" for a place with no county
 CAL = {a: {"groups": {g: {"n": v.get("n"), "official": v.get("official")} for g, v in (c.get("groups") or {}).items()}}
@@ -1132,7 +1239,7 @@ def web_order(p):
 
 WEB = sorted(REST, key=web_order)
 CORE_KEYS = ["n", "c", "co", "cu", "t", "s", "a", "z", "b", "ch", "g", "hc", "ip", "f", "h", "mi", "dish"]
-cols = {k: [] for k in CORE_KEYS + ["dla", "dlo", "jb", "lq"]}
+cols = {k: [] for k in CORE_KEYS + ["dla", "dlo", "jb", "ib", "isc", "idn"]}
 ids, shards = [], defaultdict(dict)
 prev = [0, 0]
 for i, p in enumerate(WEB):
@@ -1154,21 +1261,27 @@ for i, p in enumerate(WEB):
     if r.get("co") is None:
         cols["co"][-1] = len(COUNTIES)
     cols["jb"].append(1 if r.get("jbf") else None)
-    cols["lq"].append(1 if p.beer else None)   # an on-site Metro Nashville beer permit
+    ins = p.ins or {}
+    cols["ib"].append(ins.get("b"))
+    cols["isc"].append(ins.get("s"))
+    cols["idn"].append(day_num(ins.get("d")))
     d = {k: r[k] for k in ("ph", "note", "seas", "fn", "jbf", "lic") if r.get(k)}
     if p.site:
         d["w"] = p.site
+    if ins.get("h"):
+        d["in"] = {"n": ins.get("n"), "h": ins["h"], "i": ins.get("i") or []}
     if d:
         shards[dk][str(i)] = d
 assert len(set(ids)) == len(ids), "place ids must be unique (saved places and #p= links use them)"
 for f in glob.glob(f"{DOCS}/data/detail*.json"):   # files from an older layout or a region that emptied
     os.remove(f)
-# columns that are mostly empty (hand-checked and honored facts) go as [[index, value], ...] instead of 17,000 nulls
+# columns that are mostly empty (hand-checked and honored facts, Wake's inspections) go as [[index, value], ...] instead of 23,000 nulls
 sparse = {k: [[i, v] for i, v in enumerate(cols.pop(k)) if v is not None]
           for k in list(cols) if sum(v is not None for v in cols[k]) < len(WEB) * 0.05}
-core = {"generated": D["generated"], "permits_updated": PERMITS_UPDATED,
-        "n": len(WEB), "cities": CITIES, "cuisines": CUISINES, "counties": COUNTIES + ["Tennessee"],
-        "brands": D["brands"], "srcs": D["srcs"], "calibration": CAL, "cols": cols, "sparse": sparse,
+core = {"generated": D["generated"], "permits_updated": PERMITS_UPDATED, "inspections_through": INS_THROUGH, "day0": DAY0,
+        "portal": PORTAL, "county_no": [COUNTY_NO.get(c) for c in COUNTIES] + [None],
+        "n": len(WEB), "cities": CITIES, "cuisines": CUISINES, "counties": COUNTIES + ["North Carolina"],
+        "brands": D["brands"], "srcs": D["srcs"], "results": RESULTS, "itypes": ITYPES, "calibration": CAL, "cols": cols, "sparse": sparse,
         "dfiles": [f if dk in shards else None for dk, f in enumerate(DFILES)]}   # null: that county has no extras, so no file
 assert all("," not in x for x in ids)
 # ids and details are keyed by row, so a file from one build must never meet another build's core.json (a browser cache can outlive a
@@ -1183,7 +1296,7 @@ json.dump({"ver": DATA_VER, **core}, open(f"{DOCS}/data/core.json", "w"), separa
 json.dump({"v": DATA_VER, "ids": ",".join(ids)}, open(f"{DOCS}/data/ids.json", "w"), separators=(",", ":"))   # one string: smaller than an array
 for f in glob.glob(f"{DOCS}/data/*_shapes.json"):
     os.remove(f)
-json.dump(json.load(open(f"{ROOT}/data/tn/tn_shapes.json")), open(f"{DOCS}/data/tn_shapes.json", "w"), separators=(",", ":"))
+json.dump(json.load(open(f"{ROOT}/data/nc/nc_shapes.json")), open(f"{DOCS}/data/nc_shapes.json", "w"), separators=(",", ":"))
 
 
 def sizes(path):
@@ -1261,20 +1374,33 @@ EXPLORE_CSS = """
   @media (max-width: 600px) { #ex-sort { max-width: calc(100vw - 100px); } }
   .ex-res { display: inline-block; font: 800 12px/1.4 -apple-system, system-ui, sans-serif; letter-spacing: .04em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; text-align: center; }
   .ex-res-ok { background: #ddefe3; color: #0e5a2b; } .ex-res-mid { background: #ffe9c2; color: #6b3a00; } .ex-res-low { background: #f9d5db; color: #7a0019; } .ex-res-x { background: var(--surface2); color: var(--ink2); }
+  /* the county's grade card: black on white, as the rule has it, in both color schemes */
+  .ex-card { display: inline-grid; place-items: center; min-width: 34px; height: 34px; padding: 0 6px; border: 2px solid #111; background: #fff; color: #111; font: 800 20px/1 var(--display); border-radius: 4px; }
+  .ex-gs { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+  .ex-grade { display: flex; align-items: center; gap: 12px; margin: 4px 0 8px; }
+  .ex-grade b { font: 600 22px/1 var(--mono); color: var(--ink); }
+  .ex-hist { list-style: none; padding: 0 !important; margin: 4px 0; }
+  .ex-hist li { display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid var(--rule); padding: 4px 0; margin: 0 !important; }
+  .ex-cited li { margin: 4px 0 !important; }
 """
 url = f"{DOMAIN}/explore/"
 N_HC_GUIDES = len(HC_ANY)
-title = fit(["Tennessee Restaurant Search: Map, Hot Chicken & BBQ", "Search Tennessee Restaurants: Hot Chicken, BBQ & Biscuits",
-             "Tennessee Restaurant Search: Hot Chicken, BBQ & Map | TN Eats"], 50, 60, "explore title")
-desc = fit([f"Look up {N_REST:,} Tennessee restaurants by name, town, street, zip or dish, and map {N_HC_GUIDES} hand-checked places from hot chicken to whole hog.",
-            f"Search {N_REST:,} Tennessee restaurants by name, town, street or dish, and map {N_HC_GUIDES} hand-checked places, from hot chicken to pancake houses.",
-            f"Search {N_REST:,} Tennessee restaurants by name, town, street or dish, and browse {N_HC_GUIDES} hand-checked places and {len(HON_L)} honorees on a map."],
+title = fit(["North Carolina Restaurant Search: Barbecue, Grades & Map", "Search North Carolina Restaurants: BBQ, Grades & Map",
+             "NC Restaurant Search: Barbecue, Wake Grades & Map | NC Eats"], 50, 60, "explore title")
+desc = fit([f"Look up {N_REST:,} North Carolina restaurants by name, town, street or dish, map {N_HC_GUIDES} hand-checked places and see Wake County's grades.",
+            f"Search {N_REST:,} North Carolina restaurants by name, town, street or dish, map {N_HC_GUIDES} hand-checked barbecue joints and see Wake's grades.",
+            f"Search {N_REST:,} North Carolina restaurants by name, town or dish, browse {N_HC_GUIDES} hand-checked places on a map and see Wake County's scores."],
            140, 160, "explore description")
 nav, bc = crumbs([("Home", "/"), ("Search", "/explore/")])
+LIST_WORDS = {"bbqeast": "Eastern whole hog", "bbqlex": "Lexington barbecue", "hotdogs": "Carolina hot dog", "calabash": "Calabash seafood",
+              "biscuits": "biscuit and livermush", "moravian": "Moravian bakery"}
+# the app's guides, each once it has a place in it (Home leaves an empty one out too); the web app's GUIDES has them all
+WEB_GUIDES = [(k, t) for k, t in (("bbqeast", "Eastern whole hog"), ("bbqlex", "Lexington barbecue"), ("hotdogs", "Carolina hot dogs"),
+                                   ("calabash", "Calabash seafood"), ("biscuits", "Biscuits & livermush"), ("moravian", "Moravian bakeries"))
+              if L_ALL[k]]
 guide_buttons = "".join(f'<button type="button" data-g="{k}" aria-pressed="false">{e(t)}</button>' for k, t in
-                        (("hotchicken", "Hot chicken"), ("bbq", "Memphis barbecue"), ("wholehog", "Whole hog"),
-                         ("meat3", "Meat-and-threes"), ("biscuits", "Biscuits & country ham"), ("pancakes", "Pancake houses"),
-                         ("honors", "MICHELIN & James Beard"), ("oldest", "Oldest"), ("all", "All restaurants"), ("saved", "Saved")))
+                        WEB_GUIDES + [("honors", "MICHELIN & James Beard")] + ([("oldest", "Oldest")] if OLD_L else [])
+                        + [("inspections", "Wake County inspections"), ("all", "All restaurants"), ("saved", "Saved")])
 explore_js = open(f"{ROOT}/scripts/explore.js").read()
 JS_KEYS = sorted(set(re.findall(r'store\.set\("([a-z]+)"', explore_js)))   # the keys the web app writes, each under STORAGE_PREFIX
 assert JS_KEYS and "localStorage.setItem(PREFIX + k" in explore_js and len(re.findall(r"localStorage\.setItem", explore_js)) == 1
@@ -1284,11 +1410,11 @@ body = f"""{nav}
   <main id="main">
   <section class="ex-hero">
     <p class="kicker">{BRAND} · on the web</p>
-    <h1>Search Tennessee restaurants</h1>
-    <p class="sub">Pick a list, or type a name, a town, a street or a dish. Behind the search: {N_REST:,} Tennessee restaurants, cafés, bars and bakeries; {N_HC_GUIDES} hand-checked places on the hot chicken, Memphis barbecue, whole hog, meat-and-three, biscuit, pancake house and oldest-places lists; {len(HON_L)} MICHELIN and James Beard honorees; and Nashville's beer permits. It's the data the iPhone and iPad app will ship with, and what you save stays in this browser.</p>
+    <h1>Search North Carolina restaurants</h1>
+    <p class="sub">Pick a list, or type a name, a town, a street or a dish. Behind the search: {N_REST:,} North Carolina restaurants, cafés, bars and bakeries; {N_HC_GUIDES} hand-checked places on the {e(join_words([LIST_WORDS[k] for k, _ in WEB_GUIDES]))} lists; {len(HON_L)} MICHELIN and James Beard honorees; and Wake County's inspection scores for {len(INS_L):,} places. It's the data the iPhone and iPad app will ship with, and what you save stays in this browser.</p>
   </section>
   <p id="ex-loading" hidden>Loading the restaurant list…</p>
-  <noscript><p>The search needs JavaScript. The guides work without it: <a href="/{GUIDE_PATH['hotchicken']}">Nashville hot chicken</a>, <a href="/{GUIDE_PATH['bbq']}">Memphis barbecue</a>, <a href="/{GUIDE_PATH['meat3']}">meat-and-threes</a>, <a href="/{INS_PATH}">checking an inspection</a>.</p></noscript>
+  <noscript><p>The search needs JavaScript. The guides work without it: {", ".join(f'<a href="/{GUIDE_PATH[k]}">{e(GUIDE_NAME[k][0].lower() + GUIDE_NAME[k][1:])}</a>' for k in list(L)[:3])}, <a href="/{INS_PATH}">restaurant grades, explained</a>.</p></noscript>
   <div id="ex-app" hidden data-ver="{DATA_VER}">
     <div class="ex-controls">
       <div class="ex-guides" role="group" aria-label="Guides">{guide_buttons}</div>
@@ -1312,7 +1438,7 @@ body = f"""{nav}
     </div>
     <div id="ex-listwrap"><ol id="ex-list" class="ex-list"></ol><button type="button" id="ex-more" class="ex-small" hidden></button></div>
     <div id="ex-mapwrap" hidden>
-      <canvas id="ex-map" aria-label="Map of Tennessee with a dot for each place in the list. The list view has the same places."></canvas>
+      <canvas id="ex-map" aria-label="Map of North Carolina with a dot for each place in the list. The list view has the same places."></canvas>
       <div class="ex-zoom"><button type="button" id="ex-zin" aria-label="Zoom in">+</button><button type="button" id="ex-zout" aria-label="Zoom out">−</button></div>
       <p id="ex-maphint"></p>
       <p id="ex-mapattr">Outlines © OpenStreetMap contributors, Overture Maps Foundation</p>
@@ -1332,11 +1458,12 @@ page("explore/index.html", title, desc, body, [webapp_ld, bc], extra_css=EXPLORE
 
 # ---------------------------------------------------------------- landing page
 # alt text says what each capture shows (docs/screenshots, made by scripts/capture-screenshots.sh; copies by scripts/site-images.sh)
-shots = [("home", "The Tennessee Eats home screen: a search box and guide cards for Hot Chicken, Memphis Barbecue, Whole Hog and Meat-and-Threes, each with its count of places.", "A guide for each Tennessee craving."),
-         ("hot_chicken", "The hand-checked hot chicken list in Tennessee Eats, nearest first, with each place's town and distance.", "Hot chicken nearest you."),
-         ("detail", "Prince's Hot Chicken Shack in Tennessee Eats: its address, America's Classic and hot chicken tags, a button for Apple Maps' ratings, hours and photos, Directions and Call buttons, a small map and the hand-checked notes.", "Each place, hand-checked notes and all."),
-         ("map", "The Tennessee Eats map around Nashville, with pins and numbered clusters and filter buttons for Tennessee picks and honors.", "The map, by guide."),
-         ("honors", "The MICHELIN and James Beard list in Tennessee Eats.", "MICHELIN Guide and James Beard honorees.")]
+shots = [("home", "The North Carolina Eats home screen: a search box and guide cards for Eastern Whole Hog, Lexington Barbecue, Carolina Hot Dogs and Biscuits & Livermush, each with its count of places.", "A guide for each North Carolina craving."),
+         ("eastern_bbq", "The hand-checked Eastern whole hog list in North Carolina Eats, with each place's town.", "Whole hog, east of Raleigh."),
+         ("detail", "Sam Jones BBQ in North Carolina Eats: its address, Bib Gourmand and Eastern whole hog tags, a button for Apple Maps' ratings, hours and photos, Directions and Call buttons, and Wake County's latest inspection score and grade.", "Each place, with Wake County's grade."),
+         ("inspections", "Wake County's inspections in North Carolina Eats: each place's street address, grade card, score and month.", "Wake County's own scores."),
+         ("map", "The North Carolina Eats map around Raleigh, with pins and numbered clusters and filter buttons for North Carolina picks and honors.", "The map, by guide."),
+         ("honors", "The MICHELIN and James Beard list in North Carolina Eats.", "MICHELIN Guide and James Beard honorees.")]
 shot_html = []
 for i, (name, alt, cap) in enumerate(shots):
     png = f"{DOCS}/img/screen-{name}.png"
@@ -1348,14 +1475,16 @@ for i, (name, alt, cap) in enumerate(shots):
     src = (f'<source srcset="/img/screen-{name}.webp" type="image/webp">' if webp else "")
     shot_html.append(f'<li><picture>{src}<img src="/img/screen-{name}.png" alt="{e(alt)}" width="{w}" height="{h}"{lazy} decoding="async"></picture><p>{e(cap)}</p></li>')
 
-HOT_L = L["hotchicken"]
-n_hot_towns = len({p.city for p in HOT_L if p.city})
+EAST_L, LEX_L = L_ALL["bbqeast"], L_ALL["bbqlex"]
+GUIDE_PHRASE = {"bbqeast": "Eastern whole hog barbecue", "bbqlex": "Lexington barbecue", "hotdogs": "Carolina hot dogs", "calabash": "Calabash seafood",
+                "biscuits": "biscuits and livermush", "moravian": "Moravian bakeries"}
+GUIDE_WORDS = join_words([GUIDE_PHRASE[k] for k, _ in WEB_GUIDES])
 faq = [
-    ("Is Tennessee Eats free?", "Completely: no price, no ads, no in-app purchases and no account to create. It's an iPhone and iPad app on its way to the App Store, with no Android version yet; until it's out, the web search here works in any browser."),
-    ("Where do the lists come from?", f"Two kinds of source. The hot chicken, Memphis barbecue, whole hog, meat-and-three, biscuit, pancake house and oldest-places lists are our own research from {CHECKED}, with a 2025 or 2026 source behind each place: its website or menu, a dated local news story or an official tourism listing. The wider directory of {N_REST:,} restaurants starts from Overture Maps' open place data, keeps the kinds of listing that proved reliable against Nashville's beer permits, and adds restaurants from that list."),
-    ("Where can I get Nashville hot chicken?", f"Our hot chicken list has {len(HOT_L)} hand-checked places in {plural(n_hot_towns, 'town')}, most of them in Nashville, from Prince's to Bolton's and Hattie B's. In the web search, the list puts the nearest first once you share your location."),
-    ("How do I check a Tennessee restaurant's inspection?", "The Tennessee Department of Health and the health departments of Davidson, Shelby, Knox, Hamilton and Madison counties post each inspection report, with its score, in one search. It isn't published as data, so we link it from every place rather than copy it, and we compute no grade."),
-    ("Does it show which places serve alcohol?", "Only in Nashville. Metro Nashville's Beer Permit Board publishes its permits, so a Davidson County place with an on-site beer permit says so. Elsewhere, beer is permitted town by town and liquor licenses aren't published as a list, so alcohol shows as unknown, never as no."),
+    ("Is North Carolina Eats free?", "Completely: no price, no ads, no in-app purchases and no account to create. It's an iPhone and iPad app on its way to the App Store, with no Android version yet; until it's out, the web search here works in any browser."),
+    ("Where do the lists come from?", f"Two kinds of source. The {join_words([LIST_WORDS[k] for k, _ in WEB_GUIDES])} lists are our own research from {CHECKED}, with a 2025 or 2026 source behind each place: its website or menu, a dated local news story, a Wake County inspection or an official tourism listing. The wider directory of {N_REST:,} restaurants starts from Overture Maps' open place data, keeps the kinds of listing that proved reliable against Wake County's permit list, and adds Wake restaurants from that list."),
+    ("Where can I get Eastern and Lexington barbecue?", f"Our Eastern list has {len(EAST_L)} hand-checked whole hog places in {plural(len({p.city for p in EAST_L if p.city}), 'town')}, and our Lexington list {len(LEX_L)} Piedmont pits in {plural(len({p.city for p in LEX_L if p.city}), 'town')}. In the web search, either list puts the nearest first once you share your location."),
+    ("How do North Carolina restaurant grades work?", "Every county inspects restaurants under the state's rules and posts a grade card by the door: A for a score of 90 or more, B for 80 to under 90, C for 70 to under 80. Wake County publishes its inspections as data, so Wake places show the latest official score, its grade, the date and the items cited. The other counties' reports are in the state's inspection search, linked from each place; we copy no score and compute no grade."),
+    ("Does it show which places serve alcohol?", "No. North Carolina's ABC permits aren't published as a list, so alcohol shows as unknown everywhere, never as no."),
     ("Does it show ratings and reviews?", "Not from us. Tapping a place opens Apple Maps' own card inside the app, with Apple's current ratings, hours, photos and directions. None of our lists is sorted by anyone's rating."),
     ("Does it need my location?", "No. Location only matters for putting the nearest places first. If you share it, it stays on your iPhone or iPad and never reaches us, and the app works fine without it. On this website, Near me reads your location inside your browser and nowhere else."),
     ("A place has closed, or something's wrong. How do I tell you?", f"Write to {EMAIL} with the place's name, its town and what changed. Corrections ship with the next data update."),
@@ -1366,8 +1495,8 @@ faq_ld = {"@context": "https://schema.org", "@type": "FAQPage", "@id": f"{DOMAIN
 app_ld = {"@context": "https://schema.org", "@graph": [
     # No "offers" until the app is on the App Store (put it back with the listing URL: price 0, USD).
     {"@type": "MobileApplication", "@id": f"{DOMAIN}/#app", "name": APP_NAME,
-     "alternateName": ["Tennessee Eats", "Tennessee Eats: Hot Chicken, BBQ & Biscuits"],
-     "description": f"A free guide to {N_REST:,} Tennessee restaurants, with hand-checked lists of Nashville hot chicken, Memphis barbecue, whole hog, meat-and-threes, biscuits and country ham, Smokies pancake houses and the state's oldest places, and {len(HON_L)} MICHELIN and James Beard honorees. Sort by distance, open Apple Maps' live place card for hours and photos, and save places for your next trip.",
+     "alternateName": ["NC Eats", "North Carolina Eats: Restaurants, BBQ & Biscuits"],
+     "description": f"A free guide to {N_REST:,} North Carolina restaurants, with hand-checked lists of {GUIDE_WORDS}, {len(HON_L)} MICHELIN and James Beard honorees, and Wake County's official inspection scores. Sort by distance, open Apple Maps' live place card for hours and photos, and save places for your next trip.",
      "url": f"{DOMAIN}/", "image": f"{DOMAIN}/og.png", "operatingSystem": "iOS, iPadOS", "applicationCategory": "TravelApplication",
      "applicationSubCategory": "Food & Drink", "inLanguage": "en", "publisher": {"@id": ORG_ID}},
     {"@type": "Organization", "@id": ORG_ID, "name": BRAND, "url": f"{DOMAIN}/",
@@ -1375,75 +1504,77 @@ app_ld = {"@context": "https://schema.org", "@graph": [
      "contactPoint": {"@type": "ContactPoint", "contactType": "customer support", "email": EMAIL, "availableLanguage": "en"},
      # the Eats Ranked hub lists this site as a subOrganization; say so from this side too
      "parentOrganization": HUB},
-    {"@type": "WebSite", "@id": f"{DOMAIN}/#website", "name": BRAND, "alternateName": ["Tennessee Eats app"], "url": f"{DOMAIN}/",
+    {"@type": "WebSite", "@id": f"{DOMAIN}/#website", "name": BRAND, "alternateName": ["NC Eats", "North Carolina Eats app"], "url": f"{DOMAIN}/",
      "inLanguage": "en", "publisher": {"@id": ORG_ID}}]}
 if shot_html:
     app_ld["@graph"][0]["screenshot"] = f"{DOMAIN}/img/screen-{next(n for n, *_ in shots if os.path.exists(f'{DOCS}/img/screen-{n}.png'))}.png"
-title = fit(["Tennessee Eats: Hot Chicken, BBQ & Restaurant App", "Tennessee Eats: Hot Chicken, Barbecue & Restaurant Guide"], 50, 60, "landing title")
-desc = fit([f"Hot chicken, dry-rub ribs, meat-and-threes and biscuits: a free iPhone and iPad guide to {N_REST:,} Tennessee restaurants, with hand-checked lists.",
-            f"A free iPhone and iPad guide to {N_REST:,} Tennessee restaurants, with hand-checked hot chicken, Memphis barbecue, whole hog and meat-and-threes.",
-            f"Free iPhone and iPad guide to {N_REST:,} Tennessee restaurants: hand-checked hot chicken, barbecue and biscuits, plus MICHELIN and James Beard."],
+title = fit(["North Carolina Eats: Barbecue, Biscuits & Restaurant App", "North Carolina Eats: BBQ, Biscuits & Restaurant Guide"], 50, 60, "landing title")
+desc = fit([f"Eastern whole hog, Lexington barbecue, hot dogs and biscuits: a free iPhone and iPad guide to {N_REST:,} North Carolina restaurants, with Wake's grades.",
+            f"A free iPhone and iPad guide to {N_REST:,} North Carolina restaurants, with hand-checked Eastern and Lexington barbecue, hot dogs and biscuits.",
+            f"Free iPhone and iPad guide to {N_REST:,} North Carolina restaurants: hand-checked barbecue and biscuits, MICHELIN and James Beard, Wake's grades."],
            140, 160, "landing description")
 city_cards = "".join(f'<li><a href="{city_url(c)}">{e(c)}</a></li>' for c in CITY_PAGES)
 screens = f"""
   <section id="screens">
     <h2>Inside the app</h2>
-    <ul class="shots" tabindex="0" aria-label="Tennessee Eats app screenshots">
+    <ul class="shots" tabindex="0" aria-label="North Carolina Eats app screenshots">
       {"".join(shot_html)}
     </ul>
   </section>""" if shot_html else ""
-guide_cards = "".join(f'<a class="card gc gc-{k}" href="/{GUIDE_PATH[k]}"><b>{len(L[k])}</b><h3>{e(GUIDE_NAME[k])}</h3><p>{plural(len(L[k]), "hand-checked place")}{line}.</p></a>'
-                      for k, line in (("hotchicken", ", cayenne on white bread"), ("bbq", ", dry rub to barbecue spaghetti"),
-                                      ("wholehog", " that cook the whole hog"), ("meat3", ", one meat and three sides"),
-                                      ("biscuits", " for biscuits and country ham"), ("pancakes", " in the Smokies")))
+CARD_LINE = {"bbqeast": " that cook the whole hog", "bbqlex": ", shoulder, dip and red slaw", "hotdogs": ", all the way",
+             "calabash": ", lightly fried", "biscuits": " for biscuits and livermush", "moravian": " for sugar cake and thin cookies"}
+guide_cards = "".join(f'<a class="card gc gc-{k}" href="/{GUIDE_PATH[k]}"><b>{len(L[k])}</b><h3>{e(GUIDE_NAME[k])}</h3><p>{plural(len(L[k]), "hand-checked place")}{CARD_LINE[k]}.</p></a>'
+                      for k, _ in GUIDE_TAGS)
+old_card = (f'<a class="card gc gc-oldest" href="/{OLD_PATH}"><b>{len(OLD_L)}</b><h3>North Carolina\'s oldest restaurants</h3>'
+            f'<p>{plural(len(OLD_L), "place")} open since 1960 or earlier.</p></a>') if HAS_OLD else ""
 body = f"""  <main id="main">
   <section class="hero">
     <p class="kicker">{BRAND}: {TAGLINE} for iPhone and iPad</p>
-    <h1>Tennessee restaurants, hot chicken to biscuits</h1>
-    <p class="lede">Looking for Nashville hot chicken, dry-rub ribs in Memphis, a whole hog pit, a meat-and-three lunch, a country ham biscuit or pancakes before the Smokies? {BRAND} starts with lists we checked place by place, adds the MICHELIN Guide and James Beard honorees, and maps {N_REST:,} restaurants, cafés, bars and bakeries in {N_TOWNS:,} Tennessee towns.</p>
+    <h1>North Carolina restaurants, whole hog to biscuits</h1>
+    <p class="lede">Looking for Eastern whole hog, a Lexington tray with red slaw, a hot dog all the way or a biscuit with livermush? {BRAND} starts with lists we checked place by place, adds the MICHELIN Guide and James Beard honorees and Wake County's inspection grades, and maps {N_REST:,} restaurants, cafés, bars and bakeries in {N_TOWNS:,} North Carolina towns.</p>
     <div class="cta-row">{store_button()}<a class="btn btn-ghost" href="/explore/">Search on the web</a><span class="pill store-note">No charge, no ads, no sign-in. The App Store release is on its way.</span></div>
     <ul class="stats" aria-label="What's in the app">
       <li><b>{N_HC_GUIDES}</b><span>hand-checked places</span></li>
       <li><b>{len(HON_L)}</b><span>MICHELIN &amp; James Beard</span></li>
-      <li><b>{N_TOWNS:,}</b><span>Tennessee towns</span></li>
+      <li><b>{len(INS_L):,}</b><span>Wake County grades</span></li>
       <li><b>{N_REST:,}</b><span>restaurants</span></li>
     </ul>
   </section>
 
   <section id="what">
-    <h2>Built around how Tennessee eats</h2>
-    <p class="sub">Star ratings won't tell you which shack fries the hot chicken everyone lines up for, or which barbecue joint still cooks the whole hog. {BRAND} is organized the way people here eat: hot chicken, Memphis barbecue, whole hog, meat-and-threes, biscuits and country ham, and Smokies pancake houses, each place checked in {CHECKED} against a 2025–26 source. Every place links to the state's own inspection reports, and Apple Maps' live card supplies ratings, hours and photos.</p>
+    <h2>Built around how North Carolina eats</h2>
+    <p class="sub">Star ratings won't tell you which pit still cooks the whole hog, or where the slaw comes red. {BRAND} is organized the way people here eat: {e(GUIDE_WORDS)}, each place checked in {CHECKED} against a 2025–26 source. Wake County places carry the county's own inspection score and grade, every other place links its county's reports, and Apple Maps' live card supplies ratings, hours and photos.</p>
   </section>
 
   <section id="how">
     <h2>How it works</h2>
     <ol class="steps">
-      <li class="step"><div class="n" aria-hidden="true">1</div><div><h3>Start with a craving.</h3><p>Hot Chicken, Memphis Barbecue, Whole Hog, Meat-and-Threes, Biscuits &amp; Country Ham, Smokies Pancake Houses, MICHELIN &amp; James Beard or Oldest Places. Or type a name, a town, a street or a dish to search the {N_REST:,} we list.</p></div></li>
-      <li class="step"><div class="n" aria-hidden="true">2</div><div><h3>Find the closest one.</h3><p>Put the nearest first, narrow it to one town or one kind of food, or pan the map from Memphis to Bristol.</p></div></li>
+      <li class="step"><div class="n" aria-hidden="true">1</div><div><h3>Start with a craving.</h3><p>{e(join_words([t for _, t in WEB_GUIDES] + ["MICHELIN & James Beard", "Wake County inspections"], "or"))}. Or type a name, a town, a street or a dish to search the {N_REST:,} we list.</p></div></li>
+      <li class="step"><div class="n" aria-hidden="true">2</div><div><h3>Find the closest one.</h3><p>Put the nearest first, narrow it to one town or one kind of food, or pan the map from Murphy to Manteo.</p></div></li>
       <li class="step"><div class="n" aria-hidden="true">3</div><div><h3>Head out.</h3><p>Check today's hours and photos on Apple Maps' card, call ahead, get directions, or save the place for the next road trip.</p></div></li>
     </ol>
   </section>
 {screens}
   <section id="guides">
-    <h2>Tennessee food guides</h2>
+    <h2>North Carolina food guides</h2>
     <p class="sub">Each of the app's lists has its own page here, free to read.</p>
     <div class="grid2">
       {guide_cards}
-      <a class="card gc gc-oldest" href="/{OLD_PATH}"><b>{len(OLD_L)}</b><h3>Tennessee's oldest restaurants</h3><p>{plural(len(OLD_L), "place")} open since 1960 or earlier.</p></a>
-      <a class="card gc gc-honors" href="/{HON_PATH}"><b>{len(HON_L)}</b><h3>MICHELIN &amp; James Beard</h3><p>{plural(len(HON_L), "honored Tennessee restaurant")}.</p></a>
-      <a class="card" href="/{INS_PATH}"><h3>Checking an inspection</h3><p>Where Tennessee posts restaurant inspection reports and scores, and why we link them instead of copying them.</p></a>
+      {old_card}
+      <a class="card gc gc-honors" href="/{HON_PATH}"><b>{len(HON_L)}</b><h3>MICHELIN &amp; James Beard</h3><p>{plural(len(HON_L), "honored North Carolina restaurant")}.</p></a>
+      <a class="card gc gc-inspections" href="/{INS_PATH}"><b>A·B·C</b><h3>Restaurant grades, explained</h3><p>What the card by the door means, Wake County's scores for {plural(len(INS_L), "place")}, and every county's reports.</p></a>
     </div>
   </section>
 
   <section id="cities">
-    <h2>Hot chicken, barbecue and more by city</h2>
-    <p class="sub">From Memphis to the Smokies, the towns with enough hand-checked or honored places for a page of their own. The <a href="/cities/">cities and towns index</a> sums up what's on each.</p>
+    <h2>Barbecue, biscuits and more by city</h2>
+    <p class="sub">From the mountains to the coast, the towns with enough hand-checked or honored places for a page of their own. The <a href="/cities/">cities and towns index</a> sums up what's on each.</p>
     <ul class="cities">{city_cards}</ul>
   </section>
 
   <section id="pricing">
     <h2>Free, with no catch</h2>
-    <p class="sub">The app costs nothing, shows no ads and sells nothing inside, and there's no account to make. The lists ship inside the app, so they open right away and keep working when the signal drops out in the mountains.</p>
+    <p class="sub">The app costs nothing, shows no ads and sells nothing inside, and there's no account to make. The lists ship inside the app, so they open right away and keep working when the signal drops out in the mountains or on the Outer Banks.</p>
   </section>
 
   <section id="privacy">
@@ -1457,7 +1588,7 @@ body = f"""  <main id="main">
   </section>
 
   <section id="download" class="final">
-    <h2>Find your next hot chicken</h2>
+    <h2>Find your next tray of barbecue</h2>
     <p class="sub">The iPhone and iPad app is almost here, and it's free. Ask for early access.</p>
     <div class="cta-row">{store_button()}</div>
   </section>
@@ -1470,7 +1601,7 @@ body = f"""{nav}
   <main id="main" class="legal">
   <section class="hero">
     <h1>Privacy policy</h1>
-    <p class="lede">Short version: the {BRAND} app collects nothing about you, and this website doesn't track you. Last updated {POLICY_UPDATED}.</p>
+    <p class="lede">Short version: the {BRAND} app collects nothing about you, and this website doesn't track you. Last updated {PRIVACY_UPDATED}.</p>
   </section>
   <section>
     <h2>The app</h2>
@@ -1479,6 +1610,7 @@ body = f"""{nav}
       <li><b>Location.</b> If you allow it, your location is used on your device to sort places by distance and show where you are on the map. It is never sent to us. You can turn it off in Settings at any time.</li>
       <li><b>Saved places and filters</b> are stored only on your device and are deleted when you delete the app.</li>
       <li><b>Apple Maps.</b> When you open a place's ratings, hours and photos, or ask for directions, the app asks Apple Maps for that place. Apple handles that request under <a href="https://www.apple.com/legal/privacy/" rel="noopener">Apple's privacy policy</a>, as it does for any app that shows a map.</li>
+      <li><b>Data updates.</b> When you open the app, it checks this website for newer restaurant data, at most once a day (or an hour later if a check didn't go through), and downloads it when there is some. These requests carry no location or identifiers. GitHub, which hosts this site, may keep standard server logs of them, as it does for any visit here.</li>
       <li><b>Spotlight.</b> The app adds its hand-checked and honored places to your device's search index so you can find them from Spotlight. That index stays on your device.</li>
       <li><b>Calls, websites and email</b> you start from a place open in the Phone app, your browser or Mail, and are handled by them.</li>
     </ul>
@@ -1498,9 +1630,9 @@ body = f"""{nav}
     <p>If this policy changes, the new version will be posted here with a new date. Questions: <a href="mailto:{EMAIL}">{EMAIL}</a>.</p>
   </section>
   </main>"""
-page("privacy.html", "Tennessee Eats Privacy Policy: No Tracking, No Accounts",
-     fit(["How Tennessee Eats treats your data: the iPhone app collects none, your location and saved places stay on your device, and this site uses no cookies.",
-          "How Tennessee Eats treats your data: the app collects none, your location and saved places stay on your device, and this website uses no cookies or trackers."], 140, 160),
+page("privacy.html", fit(["North Carolina Eats Privacy Policy: No Tracking, No Accounts", "North Carolina Eats Privacy Policy: No Tracking"], 50, 60),
+     fit(["How North Carolina Eats treats your data: the iPhone app collects none, your location and saved places stay on your device, and this site uses no cookies.",
+          "How North Carolina Eats treats your data: the app collects none, your location and saved places stay on your device, and this site sets no cookies."], 140, 160),
      body, [bc])
 
 nav, bc = crumbs([("Home", "/"), ("Terms of use", "/terms.html")])
@@ -1512,21 +1644,21 @@ body = f"""{nav}
   </section>
   <section>
     <h2>What the app is</h2>
-    <p>{BRAND} is a free guide to restaurants in Tennessee. It is provided as is, for personal use, without charge and without warranties of any kind.</p>
+    <p>{BRAND} is a free guide to restaurants in North Carolina. It is provided as is, for personal use, without charge and without warranties of any kind.</p>
     <h2>Check before you go</h2>
-    <p>Restaurants open, close, change their hours and change their menus, and many lunch counters and barbecue joints keep short hours. Dishes and founding years are what each place or a named source said when we checked in {CHECKED}. We work to keep the lists right, but we can't promise that any listing is current or complete. Call the restaurant before you make the trip.</p>
+    <p>Restaurants open, close, change their hours and change their menus, and many barbecue joints and hot dog stands keep short hours. Dishes and founding years are what each place or a named source said when we checked in {CHECKED}. We work to keep the lists right, but we can't promise that any listing is current or complete. Call the restaurant before you make the trip.</p>
     <h2>Inspections and public records</h2>
-    <p>The app and this site link each place to the Tennessee Department of Health's inspection search; they show no inspection scores and compute no grade. Beer permit numbers, and whether a Davidson County place serves beer, come from Metro Nashville's Beer Permit Board list, retrieved on the date shown in the app. For official records, use each agency's own site.</p>
+    <p>For Wake County places, the app and this site show Wake County's published inspection scores, the dates and the items cited, with the letter the state's grading rule (15A NCAC 18A .2662) gives each score; we compute no grade of our own. Places in other counties link the state's inspection search for their county; no score is copied. Food service permit numbers come from Wake County's open data, retrieved on the date shown in the app, and inspections run through the date shown there. For official records, use each agency's own site.</p>
     <h2>Other people's content</h2>
     <p>Ratings, reviews, hours and photos in each place card come from Apple Maps and are Apple's and its providers', under Apple's terms. Restaurant names and trademarks belong to their owners. MICHELIN and the MICHELIN Guide are trademarks of Michelin; James Beard Foundation and James Beard Award are trademarks of the James Beard Foundation. {BRAND} is not affiliated with any restaurant, chain, award body or government agency.</p>
     <h2>Data sources and licenses</h2>
     <ul>
-      <li>Metro Nashville Beer Permit Board, Beer Permit Locations (Nashville Open Data), modified for use here. Under Metro's Open Data policy the data is for informational purposes only and provided "as is" without warranties of any kind; no approval by the Metropolitan Government is claimed.</li>
+      <li>Wake County Environmental Health &amp; Safety: Restaurants in Wake County, Food Inspections and Food Inspection Violations (Wake County Open Data), under the Creative Commons Attribution 4.0 license, filtered and matched to map listings, with inspectors' names and comments left out. Wake County's notice: “Wake County Geographic Information Services shall not be held liable for any errors in these data. This includes errors of omission, commission, errors concerning the content of the data, and relative and positional accuracy of the data. These data cannot be construed to be a legal document. Primary sources from which these data were compiled must be consulted for verification of information contained in these data.” No endorsement by Wake County is claimed.</li>
       <li>Overture Maps Foundation places data, under the Community Data License Agreement, Permissive 2.0, including data from Meta, Microsoft, DAC, BrightQuery, AllThePlaces (CC0 1.0) and Foursquare (Apache 2.0).</li>
       <li>Overture Maps Foundation divisions, used for the state and county outlines on the map, under the Open Database License: © OpenStreetMap contributors, Overture Maps Foundation.</li>
       <li>Overture Maps Foundation addresses data, compiled from open address sources under permissive licenses (see docs.overturemaps.org/attribution), used to place records on the map.</li>
       <li>The MICHELIN Guide American South selection and the James Beard Foundation's awards, nominees, semifinalists and America's Classics: honors reported as facts.</li>
-      <li>Hot chicken, Memphis barbecue, whole hog, meat-and-threes, biscuits and country ham, Smokies pancake houses and founding years: our own research, with a source recorded for every place.</li>
+      <li>Eastern whole hog, Lexington barbecue, Carolina hot dogs, Calabash seafood, biscuits and livermush, and founding years: our own research, with a source recorded for every place.</li>
     </ul>
     <h2>Corrections</h2>
     <p>If a listing is wrong, or you own a restaurant and want something fixed, email <a href="mailto:{EMAIL}">{EMAIL}</a>. We fix mistakes in the next update.</p>
@@ -1536,16 +1668,16 @@ body = f"""{nav}
     <p>We may update these terms; the current version and its date are always on this page. See also the <a href="/privacy.html">privacy policy</a>.</p>
   </section>
   </main>"""
-page("terms.html", "Tennessee Eats Terms of Use: A Free Guide, Provided As Is",
-     fit(["The terms for Tennessee Eats and this site: a free restaurant guide provided as is, public records shown as the agencies published them, and how to report a mistake.",
-          "The terms for Tennessee Eats and this website: a free guide provided as is, public records shown as the agencies published them, and how to report a mistake.",
-          "The terms for Tennessee Eats and this website: a free guide provided as is, Nashville's beer permits shown as published, and how to report a mistake."], 140, 160),
+page("terms.html", fit(["North Carolina Eats Terms of Use: A Free Guide, As Is", "North Carolina Eats Terms of Use: Provided As Is"], 50, 60),
+     fit(["The terms for North Carolina Eats and this site: a free guide provided as is, public records shown as the agencies published them, and how to report a mistake.",
+          "The terms for North Carolina Eats and this site: a free guide provided as is, Wake County's records shown as published, and how to report a mistake.",
+          "Terms for North Carolina Eats and this site: a free restaurant guide provided as is, public records shown as published, and how to report a mistake."], 140, 160),
      body, [bc])
 
 body = f"""  <main id="main">
   <section class="hero">
     <h1>Page not found</h1>
-    <p class="lede">No page lives at this address. Head back to the <a href="/">{BRAND} home page</a>, the <a href="/{GUIDE_PATH['hotchicken']}">hot chicken list</a> or the <a href="/explore/">Tennessee restaurant search</a>.</p>
+    <p class="lede">No page lives at this address. Head back to the <a href="/">{BRAND} home page</a>, the <a href="/{GUIDE_PATH['bbqeast']}">Eastern barbecue list</a> or the <a href="/explore/">North Carolina restaurant search</a>.</p>
   </section>
   </main>"""
 page("404.html", f"Not found: {BRAND}", "No page lives at this address.", body, robots="noindex,follow")
@@ -1562,8 +1694,8 @@ urls.sort(key=lambda u: (u != "", u.startswith("cities/"), u))
 open(f"{DOCS}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
                                        + "".join(f"  <url><loc>{DOMAIN}/{u}</loc><lastmod>{TODAY}</lastmod></url>\n" for u in urls) + "</urlset>\n")
 open(f"{DOCS}/robots.txt", "w").write(f"User-agent: *\nAllow: /\n\nSitemap: {DOMAIN}/sitemap.xml\n")
-json.dump({"name": BRAND, "short_name": "TN Eats", "description": f"{TAGLINE[0].upper() + TAGLINE[1:]}: a guide to {N_REST:,} Tennessee restaurants.",
-           "start_url": f"{BASE}/", "display": "browser", "background_color": "#f3f5fa", "theme_color": "#002d72",
+json.dump({"name": BRAND, "short_name": "NC Eats", "description": f"{TAGLINE[0].upper() + TAGLINE[1:]}: a guide to {N_REST:,} North Carolina restaurants.",
+           "start_url": f"{BASE}/", "display": "browser", "background_color": "#f3f5fa", "theme_color": "#13294b",
            "icons": [{"src": f"{BASE}/icon-192.png", "sizes": "192x192", "type": "image/png"}, {"src": f"{BASE}/icon-512.png", "sizes": "512x512", "type": "image/png"}]},
           open(f"{DOCS}/site.webmanifest", "w"), indent=2)
 if CUSTOM_DOMAIN:
@@ -1573,9 +1705,9 @@ elif os.path.exists(f"{DOCS}/CNAME"):
 open(f"{DOCS}/.nojekyll", "w").write("")
 os.makedirs(f"{ROOT}/playbook", exist_ok=True)
 json.dump({"generated": TODAY, "domain": DOMAIN, "restaurants": N_REST, "places_incl_hidden": len(PLACES), "towns": N_TOWNS, "counties": N_COUNTIES,
-           "on_an_official_list": N_OFFICIAL, "hand_checked_on_a_guide": N_HC, "serves_beer_nashville": len(BEER_L),
-           **{"guide_" + k: len(v) for k, v in L.items()}, "oldest": len(OLD_L), "honors": len(HON_L), "michelin": MI_COUNT, "james_beard": N_JBF,
-           "americas_classics": N_CLASSICS, "permits_updated": PERMITS_UPDATED,
+           "on_an_official_list": N_OFFICIAL, "hand_checked_on_a_guide": N_HC, "wake_inspected": len(INS_L), "wake_grades": dict(GRADE_N),
+           **{"guide_" + k: len(v) for k, v in L_ALL.items()}, "guide_pages": list(L), "oldest": len(OLD_L), "honors": len(HON_L), "michelin": MI_COUNT,
+           "james_beard": N_JBF, "americas_classics": N_CLASSICS, "permits_updated": PERMITS_UPDATED, "inspections_through": INS_THROUGH,
            "city_pages": city_stats, "cities_without_a_page": CITY_SKIPPED, "noindex_pages": noindexed,
            "web_app_data_bytes": {k: {"raw": r, "gzip": g} for k, (r, g) in SIZES.items()}},
           open(f"{ROOT}/playbook/site-numbers.json", "w"), indent=1, ensure_ascii=False)
@@ -1583,7 +1715,7 @@ print("wrote", len(written) + len(noindexed) + 1, "pages:", ", ".join(written))
 if noindexed:
     print("noindex:", ", ".join(noindexed))
 print(f"restaurants {N_REST:,} in {N_TOWNS} towns | official {N_OFFICIAL:,} | hand-checked on a guide {N_HC} | "
-      + " | ".join(f"{k} {len(v)}" for k, v in L.items()) + f" | oldest {len(OLD_L)} | honors {len(HON_L)} | serves beer (Nashville) {len(BEER_L):,}")
+      + " | ".join(f"{k} {len(v)}" for k, v in L_ALL.items()) + f" | oldest {len(OLD_L)} | honors {len(HON_L)} | Wake inspected {len(INS_L):,} {dict(GRADE_N)}")
 print("city pages:", ", ".join(CITY_PAGES), "| no page (listed places):", CITY_SKIPPED)
 print(f"website blocklist: {len(BLOCKLIST)} entries, {len(BLOCKED_LINKS)} links dropped:", "; ".join(f"{n} {u}" for n, u in BLOCKED_LINKS) or "none")
 for k, (r, g) in SIZES.items():

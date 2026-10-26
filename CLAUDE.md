@@ -17,6 +17,7 @@ website blocklist = union of oh/co/pa/tn (879). Never modify another state's fol
 - Link check: `cd pipeline && CHECK_WORKERS=4 ../.venv/bin/python check_websites.py [--retry-transient]`, started detached with
   `os.setsid()` (an app restart still killed the first run at 12,500/13,711; saves every 500, atomic). Check `data/check_websites*.log`;
   back up `data/nc/website_check.json` before stopping one; then re-export the app (`NC_APP=1`) and copy it into `NorthCarolinaEats/Resources`.
+  All three passes done 2026-10-26 (11,296 links ok); app and leaderboard re-exported with them.
 - Research: `pipeline/build_research.py` (evidence standard in its docstring) -> `data/research/app/*.json` + `LEADS.md`. Guides today:
   Eastern whole hog 9, Lexington 13, Carolina hot dogs 5, Calabash 3, biscuits/livermush 5; Moravian and oldest empty (leads).
   ncbbqsociety.com is taken over (blocklisted); journalnow/greensboro.com are TollBit-walled; guide.michelin.com is read only with
@@ -31,13 +32,23 @@ website blocklist = union of oh/co/pa/tn (879). Never modify another state's fol
   latest, highest score, lowest score, nearest; rows show the street address, grade, score and month.
 - Search: NC guide phrases; "barbecue" and "bbq" find the same places. OTA data updates (`Services/DataUpdates.swift`, shared copy) came
   with the port.
-- Unit tests: 50 run 2026-10-26, all pass but the two ShareLinkTests that need `docs/data` (the site isn't generated yet). UI tests
+- Unit tests: 50 run 2026-10-26, all pass but the two ShareLinkTests that need `docs/data` (re-run after the site build). UI tests
   ported, not run.
 
+## Website (ported 2026-10-26 from tn-eats, inspections after oh-eats)
+- `scripts/make-site.py` -> `docs/` (BASE /north-carolina-eats until `NC_DOMAIN=northcarolina.eatsranked.com`); `scripts/explore.js` is the
+  web app (keys `nceats-`); `scripts/qa-site.py [--static]` checks both (served under /north-carolina-eats/ on a free port).
+- A hand-checked guide gets a page once it holds `MIN_GUIDE` (4) places; the web app and the app show a guide once it has one. Today:
+  pages for Eastern, Lexington, hot dogs, biscuits; Calabash (3) only in the app and web app; Moravian and oldest nowhere yet.
+- Grades: `north-carolina-restaurant-grades.html` explains rule .2662, counts Wake's latest grades and links all 100 counties' pages in
+  the state's search (`portal` + `county_no` in the app data). No page lists places by score; the web app's Wake County Inspections
+  guide opens on the latest inspections. qa-site.py fails if any published grade isn't the letter .2662 gives its score
+  (mutation-checked 2026-10-26: a B on a 99.5 is caught).
+- OTA: `python3 scripts/publish_app_data.py` after every export copied into `NorthCarolinaEats/Resources` (first copy 2026-10-26.1).
+- Screens: `bash scripts/capture-screenshots.sh "NC Eats 6.9"`, then `scripts/site-images.sh` and make-site.py again.
+
 ## Still to do
-1. Website: port `scripts/make-site.py`, `explore.js`, `qa-site.py` from tn-eats (Wake inspection explainer page instead of TDH; NC
-   guides; city pages), plus OTA `publish_app_data.py` (OTA-DATA.md "Adding it to a state"); then ShareLinkTests, UI tests, screenshots,
-   listing (`make-listing.py`), review reply.
+1. Screenshots (`capture-screenshots.sh`, `site-images.sh`), UI tests, `make-listing.py`, review reply (playbook/13).
 2. Research gaps (`data/research/app/LEADS.md`): Moravian bakeries, oldest places, fish camps, more hot dogs and Calabash; Montgomery Sky
    Farm's address; Lantern's dated source; Good Hot Fish's MICHELIN level in a browser; adult-venue address list.
 3. Nick: send the DHHS records request (draft in `playbook/records-requests.md`); later repo/Pages, Cloudflare CNAME `northcarolina`,

@@ -1,0 +1,57 @@
+{
+ "schema": 1,
+ "version": "2026-10-26.1",
+ "records_through": "2026-10-26",
+ "published": "2026-10-26T18:18:27Z",
+ "min_app_build": 1,
+ "files": {
+  "detail-asheville-the-mountains": {
+   "path": "detail-asheville-the-mountains-57150604c094.json",
+   "sha256": "57150604c094764178b3069442a891ab234962b8837a480dcea537662897ffd5",
+   "bytes": 155705,
+   "rows": 2405
+  },
+  "detail-charlotte-the-southern-piedmont": {
+   "path": "detail-charlotte-the-southern-piedmont-8f2fa81bb0d9.json",
+   "sha256": "8f2fa81bb0d9c4df65a3bc17ea8ca3185fe5e3d92d016f77db0a9cc9a939530a",
+   "bytes": 387929,
+   "rows": 5802
+  },
+  "detail-eastern-north-carolina-the-outer-banks": {
+   "path": "detail-eastern-north-carolina-the-outer-banks-db55f1e5c2ab.json",
+   "sha256": "db55f1e5c2ab6188a43fe3b980596b22f8a0abd49ba0f161aa713323d5c8a968",
+   "bytes": 126442,
+   "rows": 1981
+  },
+  "detail-greensboro-winston-salem-the-triad": {
+   "path": "detail-greensboro-winston-salem-the-triad-66fd5bcf9524.json",
+   "sha256": "66fd5bcf95249a3c767bed2713e0613e7157e6b1abd5a8b4afb5037a40f8be65",
+   "bytes": 239378,
+   "rows": 3612
+  },
+  "detail-raleigh-durham-the-triangle": {
+   "path": "detail-raleigh-durham-the-triangle-c56f8bf2385b.json",
+   "sha256": "c56f8bf2385b8576c0f5871544f395baefb7d42b579bad9e8e0a15d1cee3c366",
+   "bytes": 2374875,
+   "rows": 7554
+  },
+  "detail-wilmington-the-southern-coast": {
+   "path": "detail-wilmington-the-southern-coast-c0017593b132.json",
+   "sha256": "c0017593b13285bed8574a96ba6edd533f4f9c6b42b634f983f54fd818fa2997",
+   "bytes": 148926,
+   "rows": 2271
+  },
+  "places": {
+   "path": "places-a37fb1b3c70d.json",
+   "sha256": "a37fb1b3c70df8cfcdc98ca5688981ed7a15df0e90807e2076e130c40ad3f289",
+   "bytes": 3941390,
+   "rows": 24030
+  }
+ },
+ "counts": {
+  "places": 24030,
+  "files": 7,
+  "bytes": 7374645,
+  "restaurants": 22903
+ }
+}

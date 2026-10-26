@@ -7,12 +7,14 @@ Static (no browser):
 - titles 50-60 and descriptions 140-160 characters, unique across indexable pages; one <h1>; sitemap = the indexable pages
 - city pages: the title, h1 and description name only sections the page has
 - JSON-LD parses; ItemList items point to an anchor on the same page; no aggregateRating/review; no empty streetAddress
-- the inspections page names no place at all and lists none (Tennessee's scores aren't published as data; we show none)
+- every published grade is the letter rule .2662 gives its Wake County score (A 90+, B 80 to under 90, C 70 to under 80), only Wake
+  places carry one, and the grades page names no place at all and lists none
 - the hand-checked guide pages list only hand-checked places with that guide's tag (matched to core.json by name and address)
 - the honors page never calls a finalist or semifinalist a winner; MICHELIN and James Beard trademark lines on every page
-- the inspections page says we show no scores and compute no grade, names the five county health departments and links TDH's search
-- the web app keeps its localStorage under "tneats-"; its map credits OpenStreetMap and Overture; it links TDH's inspection search and
-  has no inspection guide or score sort (no worst list)
+- the grades page cites rule .2662 and its cut-offs, says we compute no grade, links Wake County's data and all 100 counties' pages in
+  the state's search
+- the web app keeps its localStorage under "nceats-"; its map credits OpenStreetMap and Overture; it links Wake's data and the state's
+  search; its Wake County Inspections guide doesn't open on the lowest scores (no worst list)
 - data: ids unique and as many as places; detail files keyed inside core and in the right county; websites are http(s); no
   Google-derived field (rating, reviews, price) anywhere in the published data; core.json, ids.json, every detail file and the web
   app page carry the same build version (rows only line up within one build)
@@ -24,9 +26,9 @@ Static (no browser):
 - 2026-10-13 (Nick's copy decisions): no file in docs/ says "Confirmed listing" (the label is "High-confidence listing"), and none
   promises an invite or a TestFlight link ("we'll send you the TestFlight link", "you'll get an invite"): early access is an ask
 Browser (Playwright, channel="chrome"): no horizontal scroll, no console errors, no CSP violations, no broken internal links or
-images; the web app loads, searches (names, "north germantown" direction words), opens a Nashville place with its beer permit and
-the TDH inspection link, Back closes it, the phone panel is a modal dialog, a #p= link opens that place, the map draws, a hostile #g=
-doesn't break it, and saved places use the tneats- prefix. Also: AA contrast of every text run (light at both widths, dark on the main pages);
+images; the web app loads, searches (names, "north hills" direction words), opens a Wake County place with its permit, grade card,
+score and cited items and a place elsewhere with its county's link in the state's search, Back closes it, the phone panel is a modal
+dialog, a #p= link opens that place, the map draws, a hostile #g= doesn't break it, and saved places use the nceats- prefix. Also: AA contrast of every text run (light at both widths, dark on the main pages);
 ids.json waits for the first use; a slow county file keeps keyboard focus in the panel; a failed or other-build county file is reported
 as missing, never as "no license matched"; and the six family web-app bugs (16px inputs on phones, Back/Forward, the place as a modal
 dialog at every width, corrupt localStorage, no "Nearest" without a fix, a fresh location fix on every Near me tap); a tap never
@@ -37,8 +39,9 @@ box's placeholder fits at 375 px, and so do the sort select's choices.
 
 Usage: .venv/bin/python scripts/qa-site.py            (serves docs/ itself on a free localhost port; exits 1 on any problem)
        .venv/bin/python scripts/qa-site.py --static   (static checks only, a few seconds)
-Ported from az-eats/scripts/qa-site.py. Until the custom domain is live the site sits under /tennessee-eats/ on github.io, so the pages
-are served under that same path here (a temporary folder with docs/ linked in as tennessee-eats/).
+Ported from tn-eats/scripts/qa-site.py (inspection checks after oh-eats). Until the custom domain is live the site sits under
+/north-carolina-eats/ on github.io, so the pages are served under that same path here (a temporary folder with docs/ linked in as
+north-carolina-eats/).
 """
 import base64
 import functools
@@ -61,14 +64,21 @@ ROOT = os.path.join(os.path.dirname(__file__), "..")
 DOCS = os.environ.get("QA_DOCS") or os.path.join(ROOT, "docs")   # QA_DOCS: check a copy (used to mutation-test these checks)
 DOMAIN = open(os.path.join(DOCS, "CNAME")).read().strip() if os.path.exists(os.path.join(DOCS, "CNAME")) else "nickstrom5.github.io"
 BASE = re.search(r'data-base="([^"]*)"', open(os.path.join(DOCS, "index.html")).read()).group(1)
-STORAGE_PREFIX = "tneats-"
-OTHER_PREFIXES = ("coeats-", "ce-", "wieats-", "fleats-", "txeats-", "azeats-", "oreats-", "oheats-", "mieats-")
-INS_PAGE = "tennessee-restaurant-inspections.html"
-HON_PAGE = "tennessee-michelin-james-beard.html"
-GUIDE_PAGES = {"nashville-hot-chicken.html": 1, "memphis-barbecue.html": 2, "tennessee-whole-hog-barbecue.html": 4,
-               "tennessee-meat-and-threes.html": 8, "tennessee-biscuits-country-ham.html": 16, "smoky-mountains-pancake-houses.html": 32,
-               "tennessee-oldest-restaurants.html": 64}
-TDH_HOST = "inspections.myhealthdepartment.com"
+STORAGE_PREFIX = "nceats-"
+OTHER_PREFIXES = ("coeats-", "ce-", "wieats-", "fleats-", "txeats-", "azeats-", "oreats-", "oheats-", "mieats-", "tneats-", "gaeats-", "akeats-", "sceats-")
+INS_PAGE = "north-carolina-restaurant-grades.html"
+HON_PAGE = "north-carolina-michelin-james-beard.html"
+# the hand-checked guide pages a build may have (each once its research holds make-site.py's MIN_GUIDE places), with the tag each lists
+GUIDE_PAGES = {"eastern-north-carolina-barbecue.html": 1, "lexington-barbecue.html": 2, "carolina-hot-dogs.html": 4, "calabash-seafood.html": 8,
+               "north-carolina-biscuits-livermush.html": 16, "moravian-bakeries.html": 32, "north-carolina-oldest-restaurants.html": 64}
+PORTAL_HOST = "public.cdpehs.com"   # the state's inspection search (NC DHHS): linked per county, never copied
+WAKE_HOST = "data.wake.gov"         # Wake County's open data (CC BY 4.0)
+GRADES = ["A", "B", "C"]
+
+
+def grade_of(score):
+    """15A NCAC 18A .2662: A at 90 or more, B 80 to under 90, C 70 to under 80 (under 70 the permit is revoked: no card)."""
+    return "A" if score >= 90 else "B" if score >= 80 else "C" if score >= 70 else None
 EMAIL = "nick@eatsranked.com"            # Nick, 2026-10-12: the site's contact address
 OLD_EMAIL = "work-with-nick@gmail.com"     # must appear nowhere in docs/
 # Nick, 2026-10-13: the tier label is "High-confidence listing" (the family's wording), never "Confirmed listing"; and since only his
@@ -81,38 +91,42 @@ PROMISE = re.compile(r"\b(?:we'll|we will|we'd|you'll|you will|you'd)\b[^.!?]{0,
 HUB_ORG = "https://eatsranked.com/#organization"
 # other Eats Ranked states: their app names and repo slugs may not appear anywhere in docs/, and their state names may not appear in the
 # site's own copy or code (a place's own name or street, inside its list item or its JSON-LD, may say "New York" or "Washington Ave";
-# Washington is a Tennessee county and Colorado and Florida are street names, so they aren't checked as words; nor is Texas ("Texas
-# Roadhouse"), Ohio (the Ohio River) or Arizona ("Arizona Ave"))
-OTHER_APPS = r"\b(?:Wisconsin|California|Washington|Colorado|Connecticut|Maine|Idaho|New York|Chicago|Illinois|Florida|Hawaii|Pennsylvania|Texas|Michigan|Arizona|Oregon|Ohio) Eats\b|Chicago Restaurants: Ranked|\bChi Ranked\b"
-OTHER_SLUGS = r"\b(?:wi|ca|wa|co|ct|me|id|ny|chi|fl|hi|pa|tx|mi|az|or|oh)-eats\b|\b(?:wisconsin|california|washington|colorado|connecticut|maine|idaho|new-york|florida|hawaii|pennsylvania|texas|michigan|arizona|oregon|ohio)-eats\b|chicago-restaurants-ranked"
-OTHER_STATES = r"\b(?:Wisconsin|California|Connecticut|Maine|Idaho|New York|Illinois|Chicago|Florida|Hawaii|Pennsylvania|Michigan|Oregon)\b"
+# Washington is a North Carolina town and county and Colorado and Florida are street names, so they aren't checked as words; nor is
+# Texas ("Texas Roadhouse"), Ohio, Arizona or Georgia ("Georgia Ave"))
+OTHER_APPS = (r"\b(?:Wisconsin|California|Washington|Colorado|Connecticut|Maine|Idaho|New York|Chicago|Illinois|Florida|Hawaii|Pennsylvania|Texas"
+              r"|Michigan|Arizona|Oregon|Ohio|Tennessee|Georgia|Alaska|South Carolina) Eats\b|Chicago Restaurants: Ranked|\bChi Ranked\b")
+OTHER_SLUGS = (r"\b(?:wi|ca|wa|co|ct|me|id|ny|chi|fl|hi|pa|tx|mi|az|or|oh|tn|ga|ak|sc)-eats\b|\b(?:wisconsin|california|washington|colorado|connecticut"
+               r"|maine|idaho|new-york|florida|hawaii|pennsylvania|texas|michigan|arizona|oregon|ohio|tennessee|georgia|alaska|south-carolina)-eats\b"
+               r"|chicago-restaurants-ranked")
+OTHER_STATES = r"\b(?:Wisconsin|California|Connecticut|Maine|Idaho|New York|Illinois|Chicago|Florida|Hawaii|Pennsylvania|Michigan|Oregon|Tennessee|Alaska|South Carolina)\b"
 TM_MICHELIN = "MICHELIN and the MICHELIN Guide are trademarks of Michelin"
 TM_JBF = "James Beard Foundation and James Beard Award are trademarks of the James Beard Foundation"
 
 # claims the lists can't back up: the app lists what was checked or matched, never "every"/"all N" restaurants
 OVERCLAIMS = [
-    r"\bevery\s+(?:single\s+)?(?:tennessee\s+|local\s+|licensed\s+)?(?:restaurant|bar|caf[eé]|place to eat|eatery|barbecue joint|meat-and-three)",
-    r"\bevery\s+place\s+in\s+(?:tennessee|the\s+state)",
+    r"\bevery\s+(?:single\s+)?(?:north carolina\s+|local\s+|licensed\s+|permitted\s+)?(?:restaurant|bar|caf[eé]|place to eat|eatery|barbecue joint|pit|hot dog stand)",
+    r"\bevery\s+place\s+in\s+(?:north carolina|the\s+state)",
     r"\ball\s+(?:of\s+the\s+)?\d[\d,]*\s+(?:\w+\s+){0,2}(?:restaurants|places|spots|caf[eé]s|bars)\b",
-    r"\b(?:all|every)\s+(?:the\s+)?(?:restaurants|places)\s+in\s+(?:the\s+state|tennessee|town)\b",
-    r"\b(?:all|every)\s+(?:of\s+)?tennessee'?s\s+(?:restaurants|bars)\b",
+    r"\b(?:all|every)\s+(?:the\s+)?(?:restaurants|places)\s+in\s+(?:the\s+state|north carolina|town)\b",
+    r"\b(?:all|every)\s+(?:of\s+)?north carolina'?s\s+(?:restaurants|bars)\b",
     r"\b(?:search|browse|see|map)\s+(?:all|every)\s+(?:of\s+)?(?:the\s+)?\d[\d,]*\b",    # "search all 52,573" (no noun, same claim)
     r"\b(?:confirmed|checked|verified)\s+open\b",            # the research dates show when we checked a source, not that it's open now
     r"\b(?:worst|dirtiest|grossest|filthiest)\b",            # no worst lists, anywhere
-    # Tennessee: inspection scores are TDH's own and are linked, never shown; a grade of ours never is
-    r"\bour\s+(?:own\s+)?(?:grade|score|rating)\b|\bgrade(?:d|s)?\s+by\s+(?:us|tennessee eats)\b",
+    # North Carolina: a score is the county's own and the grade is the letter rule .2662 gives it; a grade of ours never is
+    r"\bour\s+(?:own\s+)?(?:grade|score|rating)\b|\bgrade(?:d|s)?\s+by\s+(?:us|north carolina eats)\b",
 ]
 # city-page words -> the section that backs them
 GENERIC = set("""the and of a an at on in by to la el le los las de del da di du restaurant restaurants cafe café cafes grill grille bar bars pub
 kitchen local mexican tex mex texmex food foods deli bakery market house fish seafood barbecue bar b q kolache kolaches tavern diner pizza pizzeria taqueria tacos
 burger burgers bbq sushi wings coffee tea juice bistro cantina eatery shack hut express company co inn lounge club station dock docks
-grill bay beach island tennessee nashville memphis knoxville chattanooga smoky smokies mountain mountains main street corner new old original famous best little big great first
-hot spicy biscuit biscuits ham country pancake pancakes meat three hog whole pit
+grill bay beach island north carolina raleigh charlotte asheville durham greensboro wake county mountain mountains main street corner new old original famous best little big great first
+hot spicy biscuit biscuits ham country livermush liver mush hog whole pit eastern lexington piedmont dog dogs calabash moravian sugar cake
 american italian mexican chinese thai japanese indian greek french spanish caribbean haitian sandwich sandwiches subs chicken steak
 steakhouse smokehouse pit brisket cafe mama papa joe joes""".split())
-CITY_KEYWORDS = [(r"hot chicken", "hotchicken"), (r"(?<!whole hog )barbecue|\bbbq\b", "bbq"), (r"whole hog", "wholehog"), (r"meat-and-threes?", "meat3"),
-                 (r"biscuits?|country ham", "biscuits"), (r"pancake", "pancakes"),
-                 (r"michelin|james beard|honoree", "honors"), (r"\boldest\b", "oldest")]
+# a keyword is backed by any one of its sections ("barbecue" by the Eastern or the Lexington list)
+CITY_KEYWORDS = [(r"whole hog", ("bbqeast",)), (r"lexington barbecue|red slaw", ("bbqlex",)), (r"barbecue|\bbbq\b", ("bbqeast", "bbqlex")),
+                 (r"hot dogs?", ("hotdogs",)), (r"calabash", ("calabash",)), (r"biscuits?|livermush", ("biscuits",)), (r"moravian", ("moravian",)),
+                 (r"michelin|james beard|honoree", ("honors",)), (r"\boldest\b", ("oldest",)), (r"grades?\b|inspection", ("inspections",))]
 
 
 class Page(html.parser.HTMLParser):
@@ -306,10 +320,26 @@ def static_checks():
         core, rows = load_core()
     except (OSError, ValueError, KeyError) as ex:
         return [f"data: couldn't read core.json ({ex})"], len(pages)
-    # Tennessee publishes no inspection data, so the published data may carry no score or result column at all
-    for k in ("results", "ib", "ij", "is", "ins"):
-        if k in core or k in core["cols"] or k in (core.get("sparse") or {}):
-            problems.append(f"data: core.json carries inspection field {k!r} (Tennessee's scores are linked, never copied)")
+    # --- never a wrong grade: every published grade is the letter rule .2662 gives the county's own score, on a Wake place, with a date
+    if core.get("results") != GRADES:
+        problems.append(f"data: core.json results {core.get('results')!r} != {GRADES}")
+    wake = core["counties"].index("Wake County") if "Wake County" in core["counties"] else None
+    n_ins = 0
+    for r in rows:
+        if r.get("ib") is None and r.get("isc") is None and r.get("idn") is None:
+            continue
+        n_ins += 1
+        b, sc, dn = r.get("ib"), r.get("isc"), r.get("idn")
+        if not (isinstance(b, int) and 0 <= b < len(GRADES) and isinstance(sc, (int, float)) and isinstance(dn, int)):
+            problems.append(f"data: {r['n']!r} has a partial inspection (grade {b!r}, score {sc!r}, day {dn!r})")
+        elif GRADES[b] != grade_of(sc):
+            problems.append(f"data: {r['n']!r} shows grade {GRADES[b]} for score {sc} (rule .2662 gives {grade_of(sc)})")
+        elif not 70 <= sc <= 100:
+            problems.append(f"data: {r['n']!r} has score {sc}, outside 70-100")
+        if r.get("co") != wake:
+            problems.append(f"data: {r['n']!r} carries an inspection but isn't in Wake County")
+    if n_ins < 1000:
+        problems.append(f"data: only {n_ins} places carry Wake County's inspections (expected about 2,000)")
     # a name made only of everyday words ("Local", "Hot Chicken Cafe") can't be told from the copy around it, so only distinctive names count
     distinctive = lambda k: len(k.strip()) >= 6 and any(w not in GENERIC for w in k.split())
     named_places = sorted({norm(r["n"]) for r in rows if distinctive(norm(r["n"]))})
@@ -396,17 +426,17 @@ def static_checks():
         # --- city pages: the title, h1 and description promise only what's on the page
         if path.startswith("cities/") and path != "cities/index.html":
             promise = " ".join([pg.title, pg.h1s[0] if pg.h1s else "", pg.desc or ""]).lower()
-            for rx, sec in CITY_KEYWORDS:
-                if re.search(rx, promise) and sec not in pg.section_ids:
-                    problems.append(f"{where}: title/h1/description mention {rx!r} but the page has no #{sec} section")
+            for rx, secs in CITY_KEYWORDS:
+                if re.search(rx, promise) and not any(sec in pg.section_ids for sec in secs):
+                    problems.append(f"{where}: title/h1/description mention {rx!r} but the page has no #{' or #'.join(secs)} section")
         # --- a town's total counts every place there, the listed ones included: never framed as extra ("Beyond those", "N more");
         # a town gets a page for hand-checked or honored places, and "checked" means hand-checked only
         if path.startswith("cities/") and re.search(r"\bBeyond those\b|\bplus [\d,]+ more\b", visible):
             problems.append(f"{where}: the town's total is framed as extra places, but it includes the listed ones")
         if re.search(r"enough checked places", visible):
             problems.append(f"{where}: says towns get a page for 'checked places' (the rule is hand-checked or honored places)")
-        # --- a self-claim of "Tennessee's oldest restaurant" is always attributed
-        for m in re.finditer(r"tennessee'?s?'? oldest restaurant(?!s)", visible, re.I):
+        # --- a self-claim of "North Carolina's oldest restaurant" is always attributed
+        for m in re.finditer(r"north carolina'?s?'? oldest restaurant(?!s)", visible, re.I):
             before = visible[max(0, m.start() - 40):m.start()].lower()
             if not re.search(r"calls itself|its own|service mark|claim", before):
                 problems.append(f"{where}: unattributed \"{m.group(0)}\" (…{visible[max(0, m.start() - 40):m.end() + 10]}…)")
@@ -459,18 +489,22 @@ def static_checks():
         for m in re.finditer(r'<a class="btn store-btn"[^>]*>(.*?)</a>', text, re.S):
             if "<svg" in m.group(1):
                 problems.append(f"{where}: the early-access button carries an Apple logo")
-    # --- the inspections page: no score or grade of ours, the five county health departments, TDH's search linked, no place named or listed
+    # --- the grades page: the rule and its cut-offs, no grade of ours, Wake's data and every county's page linked, no place named or listed
     ins = pages.get(INS_PAGE)
     if not ins:
         problems.append(f"{INS_PAGE} is missing")
     else:
         main = re.search(r"<main\b.*?</main>", ins, re.S)
         vis = norm(html.unescape(re.sub(r"<[^>]+>", " ", main.group(0) if main else ins)))
-        for need in ("shows no scores and computes no grade", "Davidson, Shelby, Knox, Hamilton and Madison", "all 95 counties", "snapshot of one day"):
+        for need in ("15A NCAC 18A .2662", "A for a score of 90 or more, B for 80 to under 90, C for 70 to under 80", "computes no grade of its own",
+                     "snapshot of one day", "copy nothing", "shall not be held liable"):
             if norm(need) not in vis:
                 problems.append(f"{INS_PAGE}: doesn't say \"{need}\"")
-        if f'href="https://{TDH_HOST}/tennessee"' not in ins:
-            problems.append(f"{INS_PAGE}: doesn't link {TDH_HOST}/tennessee")
+        if f'href="https://{WAKE_HOST}/' not in ins:
+            problems.append(f"{INS_PAGE}: doesn't link Wake County's data ({WAKE_HOST})")
+        portals = set(re.findall(rf'href="https://{re.escape(PORTAL_HOST)}/[^"]*ESTTST_CTY=(\d+)"', ins))
+        if portals != {str(i) for i in range(1, 101)}:
+            problems.append(f"{INS_PAGE}: links {len(portals)} counties' pages in the state's search, not all 100")
         if 'class="places"' in ins or '"ItemList"' in ins:
             problems.append(f"{INS_PAGE}: lists places")
         named = [k for k in named_places if k in vis and len(k.split()) >= 2]
@@ -498,10 +532,11 @@ def static_checks():
                 problems.append(f"explore/index.html: uses another state's storage prefix {other!r}")
         if not re.search(r'id="ex-mapattr"[^>]*>[^<]*© OpenStreetMap contributors, Overture Maps Foundation', pages["explore/index.html"]):
             problems.append("explore/index.html: the map doesn't credit OpenStreetMap contributors and Overture Maps Foundation")
-        if re.search(r"""\binspections\s*:\s*\{|["']low["']\s*:""", js):
-            problems.append("explore/index.html: has an inspections guide or a lowest-score sort (Tennessee's scores aren't ours to rank)")
-        if f'"https://{TDH_HOST}/tennessee"' not in js:
-            problems.append(f"explore/index.html: the place panel doesn't link TDH's inspection search ({TDH_HOST})")
+        if not re.search(r"""inspections:\s*\{[^}]*sorts:\s*\[\s*["']recent["']""", js):
+            problems.append("explore/index.html: the Wake County Inspections guide doesn't open on the latest inspections (never a worst list)")
+        for host in (WAKE_HOST, PORTAL_HOST):
+            if f'"https://{host}/' not in js:
+                problems.append(f"explore/index.html: the place panel doesn't link {host}")
     else:
         problems.append("explore/index.html is missing")
     # --- published data
@@ -599,7 +634,7 @@ class Quiet(http.server.SimpleHTTPRequestHandler):
 
 def serve():
     root = DOCS
-    if BASE:   # serve docs/ at /tennessee-eats/, the path GitHub Pages will use
+    if BASE:   # serve docs/ at /north-carolina-eats/, the path GitHub Pages will use
         root = tempfile.mkdtemp()
         os.symlink(os.path.abspath(DOCS), os.path.join(root, BASE.strip("/")))
     # QA_PORT: a fixed port (the machine is shared; each session keeps to its own range); default, any free port
@@ -691,7 +726,7 @@ def webapp_robustness(browser, base, problems):
     page = ctx.new_page()
     seen = []
     page.on("request", lambda r: seen.append(r.url))
-    page.goto(ex + "#g=hotchicken", wait_until="networkidle")
+    page.goto(ex + "#g=bbqeast", wait_until="networkidle")
     page.wait_for_selector(".ex-row")
     page.wait_for_timeout(1500)
     if any("/data/ids.json" in u for u in seen):
@@ -721,7 +756,7 @@ def webapp_robustness(browser, base, problems):
         ctx = browser.new_context(viewport={"width": 1280, "height": 900})
         page = ctx.new_page()
         page.route("**/data/detail-*.json*", handler)
-        page.goto(ex + "#g=hotchicken", wait_until="networkidle")
+        page.goto(ex + "#g=bbqeast", wait_until="networkidle")
         page.wait_for_selector(".ex-row")
         page.locator(".ex-row").first.click()
         page.wait_for_timeout(2000)
@@ -732,13 +767,13 @@ def webapp_robustness(browser, base, problems):
 
 
 def webapp_family_bugs(browser, base, problems):
-    """Six web-app bugs found in other Eats Ranked states (cross-site ADDENDUM-2), checked here so they can't arrive in Tennessee."""
+    """Six web-app bugs found in other Eats Ranked states (cross-site ADDENDUM-2), checked here so they can't arrive in North Carolina."""
     ex = base + BASE + "/explore/"
     ctx = browser.new_context(viewport={"width": 375, "height": 812}, is_mobile=True, has_touch=True)
     page = ctx.new_page()
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
-    page.goto(ex + "#g=hotchicken", wait_until="networkidle")
+    page.goto(ex + "#g=bbqeast", wait_until="networkidle")
     page.wait_for_selector(".ex-row")
     # 1. phones: the search box and selects at 16px or more (iOS zooms the page under 16px); buttons keep the site's font and size
     sizes = page.evaluate("""[...document.querySelectorAll('#ex-q, #ex-sort, #ex-town, #ex-cuisine')].map(e => [e.id, parseFloat(getComputedStyle(e).fontSize)])""")
@@ -766,9 +801,9 @@ def webapp_family_bugs(browser, base, problems):
     ctx = browser.new_context(viewport={"width": 1280, "height": 800})
     page = ctx.new_page()
     page.goto(base + BASE + "/", wait_until="networkidle")
-    page.goto(ex + "#g=hotchicken", wait_until="networkidle")
+    page.goto(ex + "#g=bbqeast", wait_until="networkidle")
     page.wait_for_selector(".ex-row")
-    page.fill("#ex-q", "hattie")
+    page.fill("#ex-q", "parker")
     page.wait_for_timeout(500)
     page.locator(".ex-row").first.click()
     page.wait_for_selector("#ex-panel:not([hidden])")
@@ -779,7 +814,7 @@ def webapp_family_bugs(browser, base, problems):
         problems.append(f"explore @1280: the open place isn't a modal dialog with focus inside and the page inert: {state}")
     page.go_back()
     page.wait_for_timeout(600)
-    if page.locator("#ex-panel").is_visible() or not page.url.startswith(ex) or page.input_value("#ex-q") != "hattie":
+    if page.locator("#ex-panel").is_visible() or not page.url.startswith(ex) or page.input_value("#ex-q") != "parker":
         problems.append(f"explore @1280: Back with a place open didn't close it and keep the search ({page.url})")
     page.go_forward()
     page.wait_for_timeout(800)
@@ -796,19 +831,19 @@ def webapp_family_bugs(browser, base, problems):
     if page.evaluate("document.activeElement.className") != "ex-row":
         problems.append("explore @1280: Escape didn't return focus to the row that opened the place")
     ctx.close()
-    # 5 and 6. no "Nearest" before a fix (none yet, or denied); every Near me tap asks for a fresh fix; outside Tennessee it says so
+    # 5 and 6. no "Nearest" before a fix (none yet, or denied); every Near me tap asks for a fresh fix; outside North Carolina it says so
     ctx = browser.new_context(viewport={"width": 1280, "height": 800}, permissions=[])
     page = ctx.new_page()
-    page.goto(ex + "#g=hotchicken&sort=nearest", wait_until="networkidle")
+    page.goto(ex + "#g=bbqeast&sort=nearest", wait_until="networkidle")
     page.wait_for_selector(".ex-row")
     page.click("#ex-locate")
     page.wait_for_timeout(1200)
     if "Nearest" in page.locator("#ex-count").inner_text():
         problems.append("explore: says 'Nearest' after location was denied")
     ctx.close()
-    ctx = browser.new_context(viewport={"width": 1280, "height": 800}, geolocation={"latitude": 36.1627, "longitude": -86.7816}, permissions=["geolocation"])
+    ctx = browser.new_context(viewport={"width": 1280, "height": 800}, geolocation={"latitude": 35.7796, "longitude": -78.6382}, permissions=["geolocation"])
     page = ctx.new_page()
-    page.goto(ex + "#g=hotchicken", wait_until="networkidle")
+    page.goto(ex + "#g=bbqeast", wait_until="networkidle")
     page.wait_for_selector(".ex-row")
     page.click("#ex-locate")
     page.wait_for_timeout(1000)
@@ -821,8 +856,8 @@ def webapp_family_bugs(browser, base, problems):
         page.wait_for_timeout(1000)
         if page.locator(".ex-row .ex-metric").first.inner_text() == first:
             problems.append("explore: a second Near me tap reused the first location fix")
-        if "outside Tennessee" not in page.locator("#ex-locmsg").inner_text():
-            problems.append(f"explore: outside Tennessee, the message doesn't say so: {page.locator('#ex-locmsg').inner_text()!r}")
+        if "outside North Carolina" not in page.locator("#ex-locmsg").inner_text():
+            problems.append(f"explore: outside North Carolina, the message doesn't say so: {page.locator('#ex-locmsg').inner_text()!r}")
     ctx.close()
 
 
@@ -840,7 +875,7 @@ def webapp_ids_and_links(browser, base, problems):
         route.continue_()
     page.route("**/data/ids.json*", slow)
     page.goto(base + BASE + "/", wait_until="networkidle")
-    page.goto(ex + "#g=hotchicken", wait_until="networkidle")
+    page.goto(ex + "#g=bbqeast", wait_until="networkidle")
     page.wait_for_selector(".ex-row")
     page.tap(".ex-row >> nth=0")
     page.wait_for_timeout(700)
@@ -859,7 +894,7 @@ def webapp_ids_and_links(browser, base, problems):
     ctx = browser.new_context(viewport={"width": 1280, "height": 800})
     page = ctx.new_page()
     page.route("**/data/ids.json*", lambda route: route.fulfill(status=200, content_type="application/json", body=stale_ids))
-    page.goto(ex + "#g=hotchicken", wait_until="networkidle")
+    page.goto(ex + "#g=bbqeast", wait_until="networkidle")
     page.wait_for_selector(".ex-row")
     page.locator(".ex-row").first.click()
     page.wait_for_timeout(1500)
@@ -875,7 +910,7 @@ def webapp_ids_and_links(browser, base, problems):
     page.wait_for_timeout(1500)
     if "couldn't load" not in page.locator("#ex-list").inner_text():
         problems.append(f"explore: with ids.json from another build, Saved says {page.locator('#ex-list').inner_text()[:80]!r}, not that it couldn't load")
-    page.goto(ex + "#g=hotchicken&p=abc123", wait_until="networkidle")
+    page.goto(ex + "#g=bbqeast&p=abc123", wait_until="networkidle")
     page.reload(wait_until="networkidle")
     page.wait_for_timeout(1500)
     if "couldn't load" not in page.locator("#ex-locmsg").inner_text():
@@ -885,7 +920,7 @@ def webapp_ids_and_links(browser, base, problems):
     # 3. a #p= link to a place that isn't in this build says so
     ctx = browser.new_context(viewport={"width": 1280, "height": 800})
     page = ctx.new_page()
-    page.goto(ex + "#g=hotchicken&p=000000000000", wait_until="networkidle")
+    page.goto(ex + "#g=bbqeast&p=000000000000", wait_until="networkidle")
     page.wait_for_selector(".ex-row")
     page.wait_for_timeout(1500)
     if "isn't on the list" not in page.locator("#ex-locmsg").inner_text():
@@ -895,7 +930,7 @@ def webapp_ids_and_links(browser, base, problems):
     ctx = browser.new_context(viewport={"width": 1280, "height": 800})
     page = ctx.new_page()
     page.goto(base + BASE + "/", wait_until="networkidle")
-    page.goto(ex + "#g=hotchicken", wait_until="networkidle")
+    page.goto(ex + "#g=bbqeast", wait_until="networkidle")
     page.wait_for_selector(".ex-row")
     page.locator(".ex-row").first.click()
     page.wait_for_selector("#ex-panel:not([hidden]) #ex-save:not([disabled])")
@@ -920,7 +955,7 @@ def webapp_ids_and_links(browser, base, problems):
         core.pop("ver", None)
         route.fulfill(status=200, content_type="application/json", body=json.dumps(core))
     page.route("**/data/core.json*", unversioned)
-    page.goto(ex + "#g=hotchicken", wait_until="networkidle")
+    page.goto(ex + "#g=bbqeast", wait_until="networkidle")
     page.wait_for_timeout(1500)
     if page.locator(".ex-row").count() or "couldn't load" not in page.locator("#ex-loading").inner_text():
         problems.append("explore: a core.json without a build version was used (rows would meet another build's ids and county files)")
@@ -928,12 +963,12 @@ def webapp_ids_and_links(browser, base, problems):
 
 
 def webapp_search_scope_and_placeholder(browser, base, problems):
-    """Typing searches only the open guide: a famous place outside it (The Catbird Seat isn't on the hot chicken list the page opens on)
+    """Typing searches only the open guide: a famous place outside it (Poole's isn't on the Eastern whole hog list the page opens on)
     gets a "Search all restaurants (N matches)" button that finds it in one click. And the search box's placeholder fits at 375 px."""
     ex = base + BASE + "/explore/"
     ctx = browser.new_context(viewport={"width": 375, "height": 812}, is_mobile=True, has_touch=True)
     page = ctx.new_page()
-    page.goto(ex + "#g=hotchicken", wait_until="networkidle")
+    page.goto(ex + "#g=bbqeast", wait_until="networkidle")
     page.wait_for_selector(".ex-row")
     fit = page.evaluate("""(() => { const q = document.querySelector('#ex-q'); const ph = q.placeholder; q.value = ph;
         const r = [q.scrollWidth, q.clientWidth, parseFloat(getComputedStyle(q).fontSize), ph]; q.value = ''; return r; })()""")
@@ -949,20 +984,20 @@ def webapp_search_scope_and_placeholder(browser, base, problems):
             const need = c.offsetWidth; c.remove(); return need > s.offsetWidth + 0.5 ? [...s.options].map(o => o.textContent) : []; })()""")
         if cut:
             problems.append(f"explore @375: the {g} sort select cuts off {cut}")
-    page.goto(ex + "#g=hotchicken", wait_until="networkidle")
+    page.goto(ex + "#g=bbqeast", wait_until="networkidle")
     page.reload(wait_until="networkidle")
     page.wait_for_selector(".ex-row")
-    page.fill("#ex-q", "catbird seat")
+    page.fill("#ex-q", "poole")
     page.wait_for_timeout(700)
     btn = page.locator("#ex-all")
     if page.locator(".ex-row").count() or not btn.count() or not re.search(r"Search all restaurants \(\d[\d,]* match", btn.inner_text()):
-        problems.append(f"explore @375: a search the hot chicken list can't answer ('catbird seat') offers no 'Search all restaurants' button "
+        problems.append(f"explore @375: a search the Eastern whole hog list can't answer ('poole') offers no 'Search all restaurants' button "
                         f"({page.locator('#ex-list').inner_text()[:100]!r})")
     else:
         btn.click()
         page.wait_for_timeout(700)
         first = page.locator(".ex-row b").first.inner_text() if page.locator(".ex-row").count() else ""
-        if "catbird seat" not in first.lower() or page.input_value("#ex-q") != "catbird seat" or "g=all" not in page.url:
+        if "poole" not in first.lower() or page.input_value("#ex-q") != "poole" or "g=all" not in page.url:
             problems.append(f"explore @375: 'Search all restaurants' didn't find The Catbird Seat with the same words (first row {first!r}, {page.url})")
     ctx.close()
 
@@ -1015,36 +1050,54 @@ def browser_checks(problems):
             errors.clear()
             ex = base + BASE + "/explore/"
             page.goto(base + BASE + "/", wait_until="networkidle")             # a page before it, so Back has somewhere to leave to
-            page.goto(ex + "#g=hotchicken", wait_until="networkidle")
+            page.goto(ex + "#g=bbqeast", wait_until="networkidle")
             page.wait_for_function("document.querySelectorAll('.ex-row').length > 0", timeout=30000)
             search = page.locator('#ex-q').first
-            for word in ("hattie", "prince"):
+            for word in ("parker", "skylight"):
                 search.fill(word)
                 page.wait_for_timeout(500)
                 want, got = expected_hits(rows, 1, word), page.locator(".ex-row").count()
                 if got != want or not want:
-                    problems.append(f"explore @{width}: '{word}' listed {got} hot chicken places, expected the {want} with that name")
+                    problems.append(f"explore @{width}: '{word}' listed {got} Eastern whole hog places, expected the {want} with that name")
             problems += bib_problems(page, ex, width)
-            # direction words: "north germantown" finds N Germantown Pkwy addresses
+            # direction words: "north tryon" finds N Tryon St addresses
             page.goto(ex + "#g=all", wait_until="networkidle")
             page.wait_for_function("document.querySelectorAll('.ex-row').length > 0", timeout=30000)
-            search.fill("north germantown")
+            search.fill("north tryon")
             page.wait_for_timeout(700)
-            nl = sum(1 for r in rows if " n germantown " in norm(r.get("a")))
+            nl = sum(1 for r in rows if " n tryon " in norm(r.get("a")))
             count_text = page.locator("#ex-count").inner_text()
             got = int(re.match(r"([\d,]+)", count_text).group(1).replace(",", "")) if re.match(r"[\d,]+", count_text) else 0
             if not nl or got < nl:
-                problems.append(f"explore @{width}: 'north germantown' listed {got} places, but {nl} have an N Germantown address")
-            # a Nashville place with an on-site beer permit: the panel shows the permit, "Serves beer" and the TDH inspection search
+                problems.append(f"explore @{width}: 'north tryon' listed {got} places, but {nl} have an N Tryon address")
+            # elsewhere, a place links its own county's page in the state's search (Charlotte: Mecklenburg, county 60)
             names = {}
             for r in rows:
                 names[r["n"]] = names.get(r["n"], 0) + 1
-            beer = next((r["n"] for r in rows if r.get("lq") and r["city"] == "Nashville" and len(r["n"]) > 10 and names[r["n"]] == 1
-                         and re.fullmatch(r"[A-Za-z0-9 '&.-]+", r["n"])), "")
-            search.fill(beer)
+            uniq = lambda r: len(r["n"]) > 10 and names[r["n"]] == 1 and re.fullmatch(r"[A-Za-z0-9 '&.-]+", r["n"])
+            meck = core["counties"].index("Mecklenburg County")   # a "Charlotte" address can sit over the line in Cabarrus or Union
+            clt = next((r["n"] for r in rows if r["city"] == "Charlotte" and r.get("co") == meck and r.get("ib") is None and uniq(r)), "")
+            search.fill(clt)
             page.wait_for_timeout(500)
-            if not beer or not page.locator(".ex-row").count():
-                problems.append(f"explore @{width}: search {beer!r} found nothing in All Restaurants")
+            if not clt or not page.locator(".ex-row").count():
+                problems.append(f"explore @{width}: search {clt!r} found nothing in All Restaurants")
+            else:
+                page.locator(".ex-row").first.click()
+                page.wait_for_timeout(1500)
+                links = page.evaluate("[...document.querySelectorAll('#ex-panel a')].map(a => a.href)")
+                if not any(re.search(rf"https://{re.escape(PORTAL_HOST)}/.*ESTTST_CTY=60$", u) for u in links):
+                    problems.append(f"explore @{width}: the panel for {clt!r} doesn't link Mecklenburg County's page in the state's search: {links}")
+                if re.search(r"\b(?:Grade|score)\b.*\b\d{2}\b", page.locator("#ex-panel").inner_text().split("HEALTH INSPECTIONS")[-1][:200], re.I):
+                    problems.append(f"explore @{width}: the panel for {clt!r} shows a score outside Wake County")
+                page.keyboard.press("Escape")
+                page.wait_for_timeout(300)
+            # a Raleigh place with Wake County's inspection: the panel shows the grade card, the county's score, its permit, alcohol as
+            # unknown, and links Wake's data and the state's search
+            wake_place = next((r["n"] for r in rows if r.get("ib") is not None and r["city"] == "Raleigh" and uniq(r)), "")
+            search.fill(wake_place)
+            page.wait_for_timeout(500)
+            if not wake_place or not page.locator(".ex-row").count():
+                problems.append(f"explore @{width}: search {wake_place!r} found nothing in All Restaurants")
             else:
                 page.locator(".ex-row").first.click()
                 page.wait_for_timeout(1500)
@@ -1054,10 +1107,18 @@ def browser_checks(problems):
                 else:
                     page.wait_for_timeout(800)
                     ptxt = panel.inner_text()
-                    if "Metro Nashville beer permit".upper() not in ptxt.upper() or "Yes (on-site permit)".upper() not in ptxt.upper():
-                        problems.append(f"explore @{width}: the panel for {beer!r} doesn't show its beer permit and 'Serves beer': {ptxt[:300]!r}")
-                    if not panel.locator(f'a[href*="{TDH_HOST}"]').count():
-                        problems.append(f"explore @{width}: the panel has no link to TDH's inspection search")
+                    r_ = next(r for r in rows if r["n"] == wake_place)
+                    want_grade, want_score = GRADES[r_["ib"]], f"{r_['isc']:g}"
+                    for need in ("Health inspections · Wake County", "Wake County food service permit", "Serves alcohol"):
+                        if need.upper() not in ptxt.upper():
+                            problems.append(f"explore @{width}: the panel for {wake_place!r} doesn't show {need!r}: {ptxt[:300]!r}")
+                    card = panel.locator(".ex-grade .ex-card").first.inner_text() if panel.locator(".ex-grade .ex-card").count() else ""
+                    shown = panel.locator(".ex-grade b").first.inner_text() if panel.locator(".ex-grade b").count() else ""
+                    if card != want_grade or shown != want_score:
+                        problems.append(f"explore @{width}: the panel for {wake_place!r} shows grade {card!r} score {shown!r}, core.json has {want_grade} {want_score}")
+                    for host in (WAKE_HOST, PORTAL_HOST):
+                        if not panel.locator(f'a[href*="{host}"]').count():
+                            problems.append(f"explore @{width}: the panel for {wake_place!r} has no link to {host}")
                     if width == 375:
                         modal = page.evaluate("""[document.querySelector('#ex-panel').getAttribute('role'),
                             document.querySelector('#ex-panel').getAttribute('aria-modal'), document.querySelector('#ex-app').inert,
@@ -1081,22 +1142,22 @@ def browser_checks(problems):
             if page.locator(".ex-row").count():
                 problems.append(f"explore @{width}: an emoji search listed places")
             # a shared #p= link opens that place
-            target = next((i for i, r in enumerate(rows) if r.get("hc") == 1 and (r.get("g") or 0) & 4), None)
+            target = next((i for i, r in enumerate(rows) if r.get("hc") == 1 and (r.get("g") or 0) & 1), None)
             if target is not None:
-                page.goto(ex + "#g=bbq&p=" + ids[target], wait_until="networkidle")
+                page.goto(ex + "#g=bbqlex&p=" + ids[target], wait_until="networkidle")
                 page.reload(wait_until="networkidle")
                 page.wait_for_timeout(1500)
                 name = page.locator("#ex-pname").inner_text() if page.locator("#ex-pname").count() else ""
                 if norm(name) != norm(rows[target]["n"]):
                     problems.append(f"explore @{width}: #p={ids[target]} opened {name!r}, not {rows[target]['n']!r}")
             # the map draws dots and credits its outlines
-            page.goto(ex + "#g=hotchicken", wait_until="networkidle")
+            page.goto(ex + "#g=bbqeast", wait_until="networkidle")
             page.reload(wait_until="networkidle")
             page.wait_for_function("document.querySelectorAll('.ex-row').length > 0", timeout=30000)
             page.locator('.ex-view button[data-v="map"]').click()
             page.wait_for_timeout(1200)
             painted = page.evaluate("""(() => { const c = document.querySelector('#ex-map'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
-                let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 170 && d[i] < 210 && d[i + 1] < 30 && d[i + 2] > 30 && d[i + 2] < 70) n++; return n; })()""")
+                let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 160 && d[i] < 200 && d[i + 1] < 40 && d[i + 2] > 50 && d[i + 2] < 85) n++; return n; })()""")
             if painted < 20:
                 problems.append(f"explore @{width}: the map drew no red dots for the barbecue joints ({painted} pixels)")
             if not page.locator("#ex-mapattr").is_visible():
@@ -1113,19 +1174,29 @@ def browser_checks(problems):
             page.wait_for_function("document.querySelectorAll('.ex-row').length > 0", timeout=30000)
             if "Nearest" in page.locator("#ex-count").inner_text():
                 problems.append(f"explore @{width}: says 'Nearest' with no location")
-            page.goto(ex + "#g=inspections", wait_until="networkidle")   # no such guide: the page falls back to a real one
+            # Wake County Inspections: opens on the latest inspections (never the lowest scores), each row a grade card that matches its score
+            page.goto(ex + "#g=inspections", wait_until="networkidle")
             page.reload(wait_until="networkidle")
             page.wait_for_function("document.querySelectorAll('.ex-row').length > 0", timeout=30000)
             opts = page.locator("#ex-sort option").all_inner_texts()
-            if any(re.search(r"lowest|score|worst", o, re.I) for o in opts):
-                problems.append(f"explore @{width}: #g=inspections offers a score order {opts}")
+            if not opts or opts[0] != "Latest inspection first" or page.input_value("#ex-sort") != "recent":
+                problems.append(f"explore @{width}: the Wake County Inspections guide opens on {opts[:1]} (the latest first; never a worst list)")
+            want_n = sum(1 for r in rows if r.get("ib") is not None)
+            if not page.locator("#ex-count").inner_text().startswith(f"{want_n:,} place"):
+                problems.append(f"explore @{width}: Wake County Inspections lists {page.locator('#ex-count').inner_text()!r}, core.json has {want_n:,}")
+            pairs = page.evaluate("[...document.querySelectorAll('.ex-row .ex-gs')].slice(0, 40).map(g => [g.querySelector('.ex-card').textContent, g.querySelector('b').textContent])")
+            wrong = [p_ for p_ in pairs if grade_of(float(p_[1])) != p_[0]]
+            if not pairs or wrong:
+                problems.append(f"explore @{width}: Wake County Inspections rows show a grade that isn't rule .2662's for their score: {wrong[:3] or 'no rows'}")
+            if "Records through" not in page.locator("#ex-sub").inner_text():
+                problems.append(f"explore @{width}: Wake County Inspections doesn't say how recent its records are")
             problems += [f"explore @{width}: CSP violation: {v}" for v in page.evaluate("window.__csp || []")]
             problems += [f"explore @{width}: console error: {e}" for e in errors]
             ctx.close()
         # dark mode: the pages people land on most, plus the web app and the 404 page
         ctx = browser.new_context(viewport={"width": 375, "height": 812}, color_scheme="dark")
         page = ctx.new_page()
-        for p in ("index.html", "nashville-hot-chicken.html", "cities/memphis.html", "tennessee-restaurant-inspections.html", "explore/index.html", "404.html", "privacy.html"):
+        for p in ("index.html", "eastern-north-carolina-barbecue.html", "cities/raleigh.html", INS_PAGE, "explore/index.html", "404.html", "privacy.html"):
             page.goto(base + BASE + "/" + ("" if p == "index.html" else p.removesuffix("index.html")), wait_until="networkidle")
             if p.startswith("explore"):
                 page.wait_for_selector(".ex-row")
@@ -1141,8 +1212,20 @@ def browser_checks(problems):
     return len(urls)
 
 
+def app_data_checks(problems):
+    """docs/data/app/, the app's data updates (scripts/publish_app_data.py, OTA-DATA.md): every manifest entry's hash, size and
+    row count match its file, the head file's date matches, and no old copy lingers."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from publish_app_data import check_app_data, app_data_dir
+    found, notes = check_app_data(DOCS, app_data_dir())
+    problems.extend("app data: " + x for x in found)
+    for x in notes:
+        print("  note: app data:", x)
+
+
 def main():
     problems, n = static_checks()
+    app_data_checks(problems)
     if "--static" in sys.argv:
         print(f"{n} pages, static checks")
     else:

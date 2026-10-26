@@ -1,11 +1,11 @@
-// Tennessee Eats web app: the iPhone app's guides, search, filters, map and place details, in the browser.
-// Keep its guide rules in step with TennesseeEats/Models/Guide.swift and its search with TennesseeEats/Models/Search.swift.
+// North Carolina Eats web app: the iPhone app's guides, search, filters, map and place details, in the browser.
+// Keep its guide rules in step with NorthCarolinaEats/Models/Guide.swift and its search with NorthCarolinaEats/Models/Search.swift.
 // Same data as the app, split by scripts/make-site.py into data/core.json (list, search and map columns), data/ids.json (each place's
 // stable id, fetched at the first tap, key, scroll or hover, so a visit that only looks doesn't download it; saved places and #p= links
-// wait for it) and data/detail-<county>.json (phones, websites, notes, Metro Nashville beer permits), fetched per
+// wait for it) and data/detail-<county>.json (phones, websites, notes, Wake County permits and inspection histories), fetched per
 // county when a place there is opened. Every data file carries the version of the core.json it was built with (core.json "ver",
 // detail "_v", ids "v"): files from another build are fetched again, and never mixed in, because ids and details are keyed by row. No cookies, no trackers; saved places and the last guide live in this browser's localStorage only
-// (keys start with tneats-: other state sites share the nickstrom5.github.io origin).
+// (keys start with nceats-: other state sites share the nickstrom5.github.io origin).
 // The page runs under a strict Content-Security-Policy (hash-pinned inline script and style): never add inline event handlers or
 // inline style attributes to the HTML built here; set properties from code instead.
 (() => {
@@ -15,7 +15,7 @@
   // every value that goes into innerHTML passes through esc(), numbers included (the data file is trusted, but not that much)
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const own = (o, k) => typeof k === "string" && Object.prototype.hasOwnProperty.call(o, k);   // Object.hasOwn, for older Safari too
-  const PREFIX = "tneats-";
+  const PREFIX = "nceats-";
   const store = {
     get(k, d) { try { const v = localStorage.getItem(PREFIX + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
     set(k, v) { try { localStorage.setItem(PREFIX + k, JSON.stringify(v)); } catch { /* private mode */ } },
@@ -30,11 +30,18 @@
   const num = (x) => (x == null || x === "" || !Number.isFinite(Number(x)) ? null : Number(x));
   const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const fmtDate = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s ?? "")); return m ? `${MONTHS[+m[2] - 1]} ${+m[3]}, ${m[1]}` : String(s ?? ""); };
-  // Tennessee publishes inspection reports only in the Department of Health's own search: each place links it, nothing is copied
-  const TDH_URL = "https://inspections.myhealthdepartment.com/tennessee";
+  const fmtMonth = (s) => { const m = /^(\d{4})-(\d{2})/.exec(String(s ?? "")); return m ? `${MONTHS[+m[2] - 1]} ${m[1]}` : String(s ?? ""); };
+  // core.json's day numbers ("idn") count from 2000-01-01
+  const dateOf = (n) => (num(n) == null ? "" : new Date(Date.UTC(2000, 0, 1) + num(n) * 86400000).toISOString().slice(0, 10));
+  // the county's own score as printed on the card: 96 or 96.5
+  const scoreText = (x) => { const n = num(x); return n == null ? "—" : String(Math.round(n * 10) / 10); };
+  // Wake County publishes its inspections as open data (CC BY 4.0); every other county's reports are only in the state's search,
+  // linked per county (core.json "portal" + the county's number), never copied
+  const WAKE_URL = "https://data.wake.gov/datasets/ebe3ae7f76954fad81411612d7c4fb17";
+  const STATE_SEARCH = "https://public.cdpehs.com/NCENVPBL/ESTABLISHMENT/ShowESTABLISHMENTTablePage.aspx";
 
-  // ---------------------------------------------------------------- search (a port of TennesseeEats/Models/Search.swift)
-  // Tennessee's pikes (Nolensville Pike, Kingston Pike) are street types too: "nolensville pike" isn't the town of Nolensville
+  // ---------------------------------------------------------------- search (a port of NorthCarolinaEats/Models/Search.swift)
+  // pikes are street types too (the app's list, kept in step): "pike" after a town's name means the road
   const typeSyn = { avenue: "ave", av: "ave", street: "st", boulevard: "blvd", road: "rd", drive: "dr", place: "pl", court: "ct",
     parkway: "pkwy", highway: "hwy", lane: "ln", trail: "trl", circle: "cir", terrace: "ter", pike: "pike", pk: "pike", pke: "pike" };
   // directions and road names: "north main" finds "N Main St", "interstate 40" finds "I-40"
@@ -42,10 +49,12 @@
     saint: "st", mount: "mt", fort: "ft", interstate: "i", ih: "i", freeway: "fwy", expressway: "expy" };
   const abbrs = new Set(Object.values(syn)), typeAbbrs = new Set(Object.values(typeSyn));
   const DIRS = new Set(["n", "s", "e", "w", "ne", "nw", "se", "sw"]);
-  const HOT = 1, BBQ = 2, HOG = 4, MEAT3 = 8, BISCUIT = 16, PANCAKE = 32, OLDEST = 64;
-  // a dish ("banana pudding", "chess pie") is not a tag: it's in each hand-checked place's search text, so it finds the places serving it
-  const tagPhrases = [["hot chicken", HOT], ["whole hog", HOG], ["meat and threes", MEAT3], ["meat and three", MEAT3], ["meat n three", MEAT3],
-    ["meat and 3", MEAT3], ["country ham", BISCUIT], ["pancake houses", PANCAKE], ["pancake house", PANCAKE], ["dry rub", BBQ]];
+  const BBQEAST = 1, BBQLEX = 2, HOTDOG = 4, CALABASH = 8, BISCUIT = 16, MORAVIAN = 32, OLDEST = 64;
+  // a dish ("banana pudding", "hushpuppies") is not a tag: it's in each hand-checked place's search text, so it finds the places serving it
+  const tagPhrases = [["whole hog", BBQEAST], ["eastern barbecue", BBQEAST], ["eastern bbq", BBQEAST], ["eastern style", BBQEAST],
+    ["lexington style", BBQLEX], ["piedmont barbecue", BBQLEX], ["red slaw", BBQLEX], ["carolina hot dogs", HOTDOG], ["carolina hot dog", HOTDOG],
+    ["calabash seafood", CALABASH], ["calabash style", CALABASH], ["livermush", BISCUIT], ["liver mush", BISCUIT], ["country ham", BISCUIT],
+    ["moravian cookies", MORAVIAN], ["sugar cake", MORAVIAN]];
   function normalize(s) {
     let t = String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
     t = t.replace(/\b([a-z0-9])\s*&\s*([a-z0-9])\b/g, "$1$2").replace(/&/g, " and ").replace(/['’`]/g, "");
@@ -104,33 +113,41 @@
   }
   const nameMatches = (p, q) => q.tokens.length && q.tokens.every((needles) => needles.some((n) => p.nameText.includes(n)));
 
-  // ---------------------------------------------------------------- guides (TennesseeEats/Models/Guide.swift)
+  // ---------------------------------------------------------------- guides (NorthCarolinaEats/Models/Guide.swift)
   const hcTag = (t) => (p) => p.hc && Boolean(p.g & t);
   const HC_SORTS = ["featured", "nearest", "name"];
   const GUIDES = {
-    hotchicken: { title: "Hot Chicken", sub: "Hand-checked Nashville hot chicken", inc: hcTag(HOT), sorts: HC_SORTS },
-    bbq: { title: "Memphis Barbecue", sub: "Hand-checked dry-rub ribs and barbecue spaghetti", inc: hcTag(BBQ), sorts: HC_SORTS },
-    wholehog: { title: "Whole Hog", sub: "Hand-checked West Tennessee whole-hog pits", inc: hcTag(HOG), sorts: HC_SORTS },
-    meat3: { title: "Meat-and-Threes", sub: "Hand-checked steam tables: one meat, three sides", inc: hcTag(MEAT3), sorts: HC_SORTS },
-    biscuits: { title: "Biscuits & Country Ham", sub: "Hand-checked biscuits and country ham", inc: hcTag(BISCUIT), sorts: HC_SORTS },
-    pancakes: { title: "Smokies Pancake Houses", sub: "Hand-checked pancake houses in the Smokies", inc: hcTag(PANCAKE), sorts: HC_SORTS },
+    bbqeast: { title: "Eastern Whole Hog", sub: "Hand-checked whole-hog pits, vinegar and pepper", inc: hcTag(BBQEAST), sorts: HC_SORTS },
+    bbqlex: { title: "Lexington Barbecue", sub: "Hand-checked pork shoulder, red dip and red slaw", inc: hcTag(BBQLEX), sorts: HC_SORTS },
+    hotdogs: { title: "Carolina Hot Dogs", sub: "Hand-checked dogs with chili, slaw, onions and mustard", inc: hcTag(HOTDOG), sorts: HC_SORTS },
+    calabash: { title: "Calabash Seafood", sub: "Hand-checked lightly breaded, quickly fried seafood", inc: hcTag(CALABASH), sorts: HC_SORTS },
+    biscuits: { title: "Biscuits & Livermush", sub: "Hand-checked biscuits and western Piedmont livermush", inc: hcTag(BISCUIT), sorts: HC_SORTS },
+    moravian: { title: "Moravian Bakeries", sub: "Hand-checked sugar cake and thin spice cookies", inc: hcTag(MORAVIAN), sorts: HC_SORTS },
     honors: { title: "MICHELIN & James Beard", sub: "MICHELIN Guide and James Beard honorees", inc: (p) => p.mi > 0 || p.jb, sorts: ["iconic", "nearest"] },
     oldest: { title: "Oldest Places", sub: "Founding years checked at the same address, oldest first", inc: (p) => p.f != null && p.hc && Boolean(p.g & OLDEST), sorts: ["oldest"], ranked: true },
+    // no "lowest score" list at the top: that order is a sort a reader picks, never the page's default
+    inspections: { title: "Wake County Inspections", sub: "Wake County's official scores and the grade each earns (A at 90 or more, B 80 to under 90, C 70 to under 80): the latest inspection for each place, with the items cited.", inc: (p) => p.idt != null, sorts: ["recent", "high", "low", "nearest"] },
     all: { title: "All Restaurants", sub: "Restaurants, cafés, bars and bakeries statewide", inc: () => true, sorts: ["name", "nearest"] },
     saved: { title: "Saved", sub: "Places you saved in this browser", inc: (p) => saved.has(p.id), sorts: ["name", "nearest"] },
   };
-  const HC_GUIDES = ["hotchicken", "bbq", "wholehog", "meat3", "biscuits", "pancakes"];
-  const SORT_LABEL = { featured: "Featured first", nearest: "Nearest", oldest: "Oldest first", name: "A to Z", iconic: "MICHELIN, then James Beard" };
+  const HC_GUIDES = ["bbqeast", "bbqlex", "hotdogs", "calabash", "biscuits", "moravian"];
+  const SORT_LABEL = { featured: "Featured first", nearest: "Nearest", oldest: "Oldest first", name: "A to Z", iconic: "MICHELIN, then James Beard",
+    recent: "Latest inspection first", high: "Highest score first", low: "Lowest score first" };
   const MI = ["", "MICHELIN Recommended", "Bib Gourmand", "1 MICHELIN Star", "2 MICHELIN Stars", "3 MICHELIN Stars"];
-  const CHIP = [[HOT, "Hot chicken"], [BBQ, "Memphis barbecue"], [HOG, "Whole hog"], [MEAT3, "Meat-and-three"], [BISCUIT, "Biscuits &amp; country ham"],
-    [PANCAKE, "Pancake house"]];
+  const CHIP = [[BBQEAST, "Eastern whole hog"], [BBQLEX, "Lexington barbecue"], [HOTDOG, "Carolina hot dogs"], [CALABASH, "Calabash seafood"],
+    [BISCUIT, "Biscuits &amp; livermush"], [MORAVIAN, "Moravian bakery"]];
+  let RESULTS = [], ITYPES = [];
+  const gradeOf = (b) => (Number.isInteger(b) && b >= 0 && b < RESULTS.length ? RESULTS[b] : "");
+  // the guide the page opens on: the first guide button the page has (a guide with no places yet has none)
+  const firstButton = document.querySelector(".ex-guides button");
+  const FIRST = (firstButton && firstButton.dataset.g) || "all";
 
   // ---------------------------------------------------------------- state
   let P = [], CAL = {}, TOWN_KEYS = {}, TOWN_KEYS_BY_LENGTH = [], GENERATED = "", META = {};
   let here = null, shown = 100, current = [], view = "list";
   const savedRaw = store.get("saved", []);
   const saved = new Set(Array.isArray(savedRaw) ? savedRaw.filter((x) => typeof x === "string" && x.length < 64) : []);
-  const st = { g: "hotchicken", q: "", sort: "", town: "", cuisine: "", chains: false, bib: false, p: "" };
+  const st = { g: FIRST, q: "", sort: "", town: "", cuisine: "", chains: false, bib: false, p: "" };
   let bibCount = 0;   // Bib Gourmand places (non-restaurants left out): the box shows only when there are some
 
   const miles = (a, b) => {
@@ -166,6 +183,11 @@
     }
     else if (o === "featured") out.sort((a, b) => (b.ip ?? -1) - (a.ip ?? -1) || (a.f ?? 9999) - (b.f ?? 9999) || byName(a, b));
     else if (o === "oldest") out.sort((a, b) => (a.f ?? 9999) - (b.f ?? 9999) || byName(a, b));
+    else if (o === "recent") out.sort((a, b) => (b.idt ?? -1) - (a.idt ?? -1) || byName(a, b));
+    else if (o === "high" || o === "low") {   // the official score, then the latest date first, then name; places without one go last either way
+      const k = o === "high" ? -1 : 1;
+      out.sort((a, b) => (a.isc == null) - (b.isc == null) || k * ((a.isc ?? 0) - (b.isc ?? 0)) || (b.idt ?? -1) - (a.idt ?? -1) || byName(a, b));
+    }
     else if (o === "iconic") {   // MICHELIN distinction, then the James Beard honor, then name (the app's order)
       const jb = (p) => (p.h & 1 ? 4 : p.h & 2 ? 3 : p.h & 4 ? 2 : p.h & 8 ? 1 : 0);
       out.sort((a, b) => (b.mi || 0) - (a.mi || 0) || jb(b) - jb(a) || byName(a, b));
@@ -194,7 +216,8 @@
 
   function metric(p, o) {
     if (o === "nearest" && here && p.la != null) return [milesText(miles(here, p)), "away"];
-    if (p.f && st.g !== "all") return [String(p.f), "since"];
+    if (st.g === "inspections" && p.idt != null) return [scoreText(p.isc), fmtMonth(dateOf(p.idt))];
+    if (p.f && st.g !== "all" && st.g !== "inspections") return [String(p.f), "since"];
     return null;
   }
 
@@ -203,7 +226,7 @@
     if (st.g === "saved" && !idsReady) loadIds().then(() => { if (st.g === "saved") render(); });
     current = list();
     document.querySelectorAll(".ex-guides button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.g === st.g)));
-    $("#ex-sub").textContent = g.sub;
+    $("#ex-sub").textContent = g.sub + (st.g === "inspections" && META.through ? ` Records through ${fmtDate(META.through)}.` : "");
     const sortSel = $("#ex-sort");
     sortSel.innerHTML = g.sorts.map((s) => `<option value="${esc(s)}"${s === o ? " selected" : ""}>${esc(SORT_LABEL[s])}</option>`).join("");
     sortSel.disabled = g.sorts.length < 2;
@@ -215,7 +238,7 @@
     saveHash();
   }
 
-  // typing searches only the open guide (the page opens on Hot Chicken): when that finds little, the same words across every
+  // typing searches only the open guide (the page opens on the first guide): when that finds little, the same words across every
   // restaurant, with the same filters, so a famous place outside the guide isn't a dead end
   const FEW = 5;
   function elsewhereCount() {
@@ -244,8 +267,9 @@
     ol.innerHTML = current.slice(0, shown).map((p, i) => {
       const m = metric(p, o);
       const rank = g.ranked ? `<span class="ex-rank${i < 3 ? " top" : ""}" aria-label="Rank ${i + 1}">${i + 1}</span>` : "";
-      const where = [p.c, p.cu].filter(Boolean).join(" · ");
-      const big = m ? `<b>${esc(m[0])}</b>` : "";
+      const where = st.g === "inspections" ? [p.a, p.c].filter(Boolean).join(", ") : [p.c, p.cu].filter(Boolean).join(" · ");
+      // the county's grade card (black on white) beside its score; the grade is the letter rule .2662 gives that score
+      const big = st.g === "inspections" && m && o !== "nearest" ? `<span class="ex-gs"><span class="ex-card" aria-label="Grade ${esc(gradeOf(p.ib))}">${esc(gradeOf(p.ib))}</span><b>${esc(m[0])}</b></span>` : m ? `<b>${esc(m[0])}</b>` : "";
       return `<li><button class="ex-row" data-i="${esc(p.i)}">${rank}<span class="ex-main"><b>${esc(p.n)}</b><span class="ex-town">${esc(where)}</span><span class="ex-chips">${chips(p, 4)}</span></span>${m ? `<span class="ex-metric">${big}<small>${esc(m[1])}</small></span>` : ""}</button></li>`;
     }).join("") + (elsewhere ? `<li class="ex-empty">Only ${esc(current.length)} in ${esc(g.title)}. ${allButton(elsewhere)}</li>` : "");
     wireAll();
@@ -257,14 +281,14 @@
   // ---------------------------------------------------------------- place panel
   const TIER = { 2: "On an official list", 1: "High-confidence listing", 0: "Listing only" };   // "High-confidence", not "confirmed" (Nick, 2026-10-13)
 
-  // Nashville's beer permits are the only official list, and only places serving beer hold one, so its match rates are a floor for
-  // comparing kinds of listings, not a rate to quote per place (the app shows none either)
+  // Wake County's permit list covers every place there that serves food, so it checks the map listings in one county; its match
+  // rates compare kinds of listings, not a rate to quote per place (the app shows none either)
   function howWeKnow(p) {
     const src = SOURCES[p.s] || "meta";
     if (src === "research") return "On our hand-checked list (checked against a 2025 or 2026 source). The open map data didn't list it as a place to eat, so it's placed from its own map listing or street address.";
     if (p.t === 2) return src === "official"
-      ? "From Metro Nashville's beer-permit list. The open map data didn't have it, so its location is Metro's own point for the permit."
-      : "Matched to an active Metro Nashville beer permit.";
+      ? "From Wake County's list of permitted food service places. The open map data didn't have it, so it's placed from the county's own address."
+      : "Matched to an active Wake County food service permit.";
     return (p.t === 1 ? "A high-confidence listing in Overture's open map data." : "A single listing in Overture's open map data, so it may be closed or misfiled.")
       + (p.hc ? " It's also on our hand-checked list, checked against a 2025 or 2026 source." : "");
   }
@@ -284,8 +308,34 @@
     behind.forEach((el) => { el.inert = modal; });
   }
 
-  // every place: where the Department of Health's own reports are (search only, never copied here)
-  const inspectionSection = () => section("Health inspections", `<p class="ex-fine">The Tennessee Department of Health, and the health departments of Davidson, Shelby, Knox, Hamilton and Madison counties, post each inspection report with its score (0 to 100) in their own search. It isn't published as data, so this site shows no scores and computes no grade.</p><p><a href="${TDH_URL}" rel="noopener" target="_blank">Search the state's inspection reports</a></p>`);
+  // the state's inspection search, at the county's own page (counties are numbered alphabetically, Wake 92)
+  const portalUrl = (co) => {
+    const n = Number.isInteger(co) ? num((META.countyNo || [])[co]) : null;
+    return n != null && META.portal ? META.portal + n : STATE_SEARCH;
+  };
+  const RULE = "North Carolina's rule (15A NCAC 18A .2662) turns the county's score into the grade on the card by the door: A at 90 or more, B 80 to under 90, C 70 to under 80.";
+  const vtype = (i) => (Number.isInteger(i) && i >= 0 && i < ITYPES.length ? ITYPES[i] : "Inspection");
+
+  // Wake County: its latest score, the grade it earns, earlier visits and the items cited, in the county's words. Elsewhere: the
+  // county's page in the state's search, linked, never copied.
+  function inspectionSection(p, d, loaded) {
+    const county = p.county && p.county !== "North Carolina" ? p.county : "";
+    if (p.idt == null) {
+      return section("Health inspections", `<p class="ex-fine">${county ? esc(county) : "Each county"} posts its inspection reports, with each score and grade, in the state's inspection search. It isn't published as data, so this site copies no score and computes no grade. ${esc(RULE)}</p><p><a href="${esc(portalUrl(p.co))}" rel="noopener" target="_blank">${county ? esc(county) + "'s inspections" : "The state's inspection search"}</a></p>`);
+    }
+    const i = d.in && typeof d.in === "object" ? d.in : {};
+    const hist = Array.isArray(i.h) ? i.h.filter(Array.isArray) : [];
+    const cited = Array.isArray(i.i) ? i.i.filter(Array.isArray) : [];
+    let h = `<div class="ex-grade"><span class="ex-card" aria-label="Grade ${esc(gradeOf(p.ib))}">${esc(gradeOf(p.ib))}</span><b>${esc(scoreText(p.isc))}</b><span>Wake County · ${esc(fmtDate(dateOf(p.idt)))}</span></div>`;
+    if (loaded && cited.length) h += `<p>Cited at that inspection:</p><ul class="ex-cited">${cited.map((v) => `<li>${esc(v[2] || v[0])}${v[1] ? ` <span class="ex-fine">(${esc(v[1])}${num(v[3]) ? `, ${esc(scoreText(v[3]))} ${num(v[3]) === 1 ? "point" : "points"}` : ""})</span>` : num(v[3]) ? ` <span class="ex-fine">(${esc(scoreText(v[3]))} ${num(v[3]) === 1 ? "point" : "points"})</span>` : ""}</li>`).join("")}</ul>`;
+    else if (loaded && hist.length) h += `<p class="ex-fine">No items were cited at that inspection.</p>`;
+    const earlier = hist.slice(1);
+    if (loaded && earlier.length) h += `<p>Earlier inspections:</p><ul class="ex-hist">${earlier.map((v) => `<li><span>${esc(fmtDate(v[0]))}${num(v[3]) ? " · " + esc(vtype(v[3])) : ""}</span><span>${esc(gradeOf(v[1]))} · ${esc(scoreText(v[2]))}</span></li>`).join("")}</ul>`;
+    if (loaded && num(i.n) != null && i.n > hist.length) h += `<p class="ex-fine">${esc(i.n)} inspections with a score in Wake County's records, which start in September 2012; the latest ${esc(hist.length)} are shown.</p>`;
+    h += `<p class="ex-fine">The score is Wake County's own; ${esc(RULE)} One inspection is a snapshot of one day. Records through ${esc(fmtDate(META.through))}, from Wake County Open Data (CC BY 4.0), with inspectors' names and comments left out.</p>`;
+    h += `<p><a href="${WAKE_URL}" rel="noopener" target="_blank">Wake County's inspection data</a> · <a href="${esc(portalUrl(p.co))}" rel="noopener" target="_blank">its page in the state's search</a></p>`;
+    return section("Health inspections · Wake County", h);
+  }
 
   function openPlace(p, push = true) {
     const panel = $("#ex-panel");
@@ -311,7 +361,7 @@
     const site = safeUrl(d.w);
     const tel = d.ph ? String(d.ph).replace(/[^\d+]/g, "") : "";
     let html = `<button class="ex-close" id="ex-close" aria-label="Close">×</button>
-      <p class="ex-kicker">${esc((p.c || "Tennessee").toUpperCase())}</p>
+      <p class="ex-kicker">${esc((p.c || "North Carolina").toUpperCase())}</p>
       <h2 id="ex-pname">${esc(p.n)}</h2>
       <p class="ex-addr">${esc([addr, p.cu].filter(Boolean).join(" · "))}</p>
       ${here && la != null ? `<p class="ex-dist">${esc(milesText(miles(here, p)))} away</p>` : ""}
@@ -329,24 +379,24 @@
     if (p.hc && (d.note || p.dish || p.f || d.seas)) {
       html += section("Hand-checked", (d.note ? `<p>${esc(d.note)}</p>` : "") + kv("On the menu", p.dish ? String(p.dish).split("; ").join(", ") : "")
         + kv("Open here since", p.f) + (d.fn ? `<p class="ex-fine">${esc(d.fn)}</p>` : "") + kv("Season", d.seas)
-        + `<p class="ex-fine">Checked against a 2025 or 2026 source: the place's own site or menu, local news or an official tourism listing. Menus and hours change${p.g & (MEAT3 | BBQ | HOG) ? ", and many meat-and-threes and barbecue joints serve lunch only or close when they sell out" : ""}, so check before you go.</p>`);
+        + `<p class="ex-fine">Checked against a 2025 or 2026 source: the place's own site or menu, local news, a Wake County inspection, the MICHELIN Guide or an official tourism listing. Menus and hours change${p.g & (BBQEAST | BBQLEX) ? ", and many barbecue joints close early or when they sell out" : ""}, so check before you go.</p>`);
     }
     if (p.mi || d.jbf) {
       const lines = [...(p.mi && MI[p.mi] ? [MI[p.mi] + " · MICHELIN Guide American South"] : []),
         ...(d.jbf ? String(d.jbf).split("; ").map((x) => "James Beard: " + x) : [])];
       html += section("Honors", `<ul>${lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul><p class="ex-fine">Honors are facts, not ratings. MICHELIN and the MICHELIN Guide are trademarks of Michelin; James Beard Foundation and James Beard Award are trademarks of the James Beard Foundation.</p>`);
     }
-    if (failed) html += `<p class="ex-fine">This place's details (beer permit, phone, website) didn't load: you may be offline, or the site was just updated. Reload the page to try again.</p>`;
+    html += inspectionSection(p, d, loaded && !failed);
+    if (failed) html += `<p class="ex-fine">This place's details (permit, inspections, phone, website) didn't load: you may be offline, or the site was just updated. Reload the page to try again.</p>`;
     else if (loaded) {
       const lic = Array.isArray(d.lic) ? d.lic.filter(Array.isArray) : [];
       html += section("Official records", (lic.length ? lic.map((l) => kv(String(l[0] || "Record"), l[1] ? String(l[1]) : "On the list")).join("")
-          : p.county === "Davidson County" ? kv("Metro Nashville beer permit", "— (none matched)") : "")
-        + kv("Serves beer", p.lq ? "Yes (on-site permit)" : "—")
-        + `<p class="ex-fine">Tennessee publishes no food-permit list. Nashville's Beer Permit Board publishes every active beer permit in Davidson County (read ${esc(fmtDate(META.permits))}); an on-site permit means the place serves beer. Elsewhere, beer is permitted town by town and liquor licenses aren't published as a list, so alcohol is unknown here, never "no". A Nashville place with no permit matched may hold one under another name.</p>`);
+          : p.county === "Wake County" ? kv("Wake County food service permit", "— (none matched)") : "")
+        + kv("Serves alcohol", "—")
+        + `<p class="ex-fine">North Carolina publishes no statewide restaurant list. Wake County publishes its food service permits (read ${esc(fmtDate(META.permits))}); a Wake place with no permit matched may hold one under another name. North Carolina's ABC permits aren't published as a list, so alcohol is unknown here, never "no".</p>`);
     }
-    html += inspectionSection();
     html += section("How we know it's here", kv("Listed as", TIER[p.t])
-      + (p.ch >= 2 ? kv("Locations in Tennessee", p.ch.toLocaleString()) : "") + `<p class="ex-fine">${esc(howWeKnow(p))}</p>`);
+      + (p.ch >= 2 ? kv("Locations in North Carolina", p.ch.toLocaleString()) : "") + `<p class="ex-fine">${esc(howWeKnow(p))}</p>`);
     const store_url = safeUrl(window.APP_STORE_URL);   // set in the page footer script once the App Store listing exists
     html += store_url
       ? `<p class="ex-app">Save it on your phone: <a href="${esc(store_url)}" rel="noopener">get the free iPhone app</a></p>`
@@ -395,7 +445,7 @@
     panelMode();
     if (!fromHistory) {
       // the list hasn't changed since the panel opened: step back over the entry openPlace pushed, so Back isn't a dead click
-      if (history.state && history.state.tneats === "place" && listHash() === listAtPush) history.back();
+      if (history.state && history.state.nceats === "place" && listHash() === listAtPush) history.back();
       else saveHash();
     }
     listAtPush = null;
@@ -405,11 +455,11 @@
 
   // ---------------------------------------------------------------- map (canvas: county outlines + a dot per place)
   let SHAPES = null, cam = null;
-  const LAT0 = 35.8, KX = Math.cos(LAT0 * Math.PI / 180);
-  const proj = (lo, la) => [(lo + 86.0) * KX, -(la - LAT0)];
+  const LAT0 = 35.3, KX = Math.cos(LAT0 * Math.PI / 180);
+  const proj = (lo, la) => [(lo + 80.0) * KX, -(la - LAT0)];
 
   function fitCam(w, h) {
-    const [x0, y0] = proj(-90.35, 36.72), [x1, y1] = proj(-81.6, 34.95);
+    const [x0, y0] = proj(-84.33, 36.6), [x1, y1] = proj(-75.45, 33.84);
     const k = Math.min(w / (x1 - x0), h / (y1 - y0)) * 0.95;
     return { k, x: (w - (x1 - x0) * k) / 2 - x0 * k, y: (h - (y1 - y0) * k) / 2 - y0 * k };
   }
@@ -427,7 +477,7 @@
     if (!w || !h) return;
     if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
     if (!cam) cam = fitCam(w, h);
-    if (!SHAPES) SHAPES = await fetchJSON(`${BASE}/data/tn_shapes.json`).catch(() => ({ state: [], counties: [] }));
+    if (!SHAPES) SHAPES = await fetchJSON(`${BASE}/data/nc_shapes.json`).catch(() => ({ state: [], counties: [] }));
     const c = cv.getContext("2d");
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
     c.clearRect(0, 0, w, h);
@@ -440,7 +490,7 @@
     const pts = current.filter((p) => p.la != null);
     const r = Math.max(2.2, Math.min(5, 1.6 + cam.k / 120));
     // plain places: one batch of small squares (tens of thousands draw fast that way); hand-checked and MICHELIN places: red dots on top
-    c.fillStyle = "#002d72";
+    c.fillStyle = "#13294b";
     const sq = pts.length > 3000 ? Math.max(1.6, r - 0.6) : r * 1.6;
     for (const p of pts) {
       if (classic(p)) continue;
@@ -449,7 +499,7 @@
       if (pts.length > 3000) c.fillRect(x - sq / 2, y - sq / 2, sq, sq);
       else { c.beginPath(); c.arc(x, y, r, 0, 6.2832); c.fill(); }
     }
-    c.fillStyle = "#c8102e"; c.strokeStyle = "#ffffff"; c.lineWidth = 1;
+    c.fillStyle = "#b31942"; c.strokeStyle = "#ffffff"; c.lineWidth = 1;
     for (const p of pts) {
       if (!classic(p)) continue;
       const [x, y] = X(p.lo, p.la);
@@ -533,7 +583,7 @@
     return d;
   }
   const DETAIL = new Map(), DETAIL_LOADED = new Set(), DETAIL_FAILED = new Set(), detailPromises = new Map();
-  // a county's detail file (phones, websites, notes, beer permits) is fetched only once someone reaches for a place there
+  // a county's detail file (phones, websites, notes, Wake permits and inspections) is fetched only once someone reaches for a place there
   function loadDetail(co) {
     // a county with no extras has no file (null in dfiles): nothing to fetch
     if (!Number.isInteger(co) || co < 0 || co >= DETAIL_FILES.length || !DETAIL_FILES[co]) { DETAIL_LOADED.add(co); return Promise.resolve(); }
@@ -566,14 +616,17 @@
     if (PAGE_VER && typeof d.ver !== "string") throw new Error("core.json from before versioning");
     DV = typeof d.ver === "string" ? d.ver : "";
     GENERATED = d.generated; CAL = d.calibration || {}; SOURCES = d.srcs || []; DETAIL_FILES = d.dfiles || [];
-    META = { permits: d.permits_updated };
+    META = { permits: d.permits_updated, through: d.inspections_through || "", portal: typeof d.portal === "string" ? d.portal : "",
+      countyNo: Array.isArray(d.county_no) ? d.county_no : [] };
+    RESULTS = Array.isArray(d.results) ? d.results.map(String) : [];
+    ITYPES = Array.isArray(d.itypes) ? d.itypes.map(String) : [];
     const n = d.n, towns = new Map(), C = { ...d.cols };
     for (const [k, pairs] of Object.entries(d.sparse || {})) {   // mostly-empty columns arrive as [[index, value], ...]
       const col = new Array(n).fill(null);
       if (Array.isArray(pairs)) for (const pr of pairs) if (Array.isArray(pr) && Number.isInteger(pr[0]) && pr[0] >= 0 && pr[0] < n) col[pr[0]] = pr[1];
       C[k] = col;
     }
-    for (const k of ["n", "c", "co", "cu", "t", "s", "a", "z", "b", "ch", "g", "hc", "ip", "f", "h", "mi", "dish", "lq", "dla", "dlo", "jb"])
+    for (const k of ["n", "c", "co", "cu", "t", "s", "a", "z", "b", "ch", "g", "hc", "ip", "f", "h", "mi", "dish", "dla", "dlo", "jb", "ib", "isc", "idn"])
       if (!Array.isArray(C[k]) || C[k].length !== n) C[k] = new Array(n).fill(null);
     P = new Array(n);
     let la = 0, lo = 0;   // coordinates come as steps of 0.0001° from the previous place
@@ -584,7 +637,10 @@
       const county = C.co[i] == null ? null : d.counties[C.co[i]];
       const p = { i, id: null, n: String(C.n[i] ?? ""), c: city, cu, t: C.t[i], s: C.s[i], a: C.a[i], z: C.z[i], la: pla, lo: plo,
         ch: num(C.ch[i]) || 1, g: C.g[i] || 0, hc: C.hc[i] === 1, ip: C.ip[i], f: num(C.f[i]), h: C.h[i] || 0,
-        mi: num(C.mi[i]) || 0, jb: C.jb[i] === 1, dish: C.dish[i], co: C.co[i], county, lq: C.lq[i] === 1 };
+        mi: num(C.mi[i]) || 0, jb: C.jb[i] === 1, dish: C.dish[i], co: C.co[i], county,
+        // Wake County's latest inspection: grade index, score, day number (all three, or none)
+        ib: Number.isInteger(C.ib[i]) ? C.ib[i] : null, isc: num(C.isc[i]), idt: null };
+      if (p.ib != null && p.isc != null && num(C.idn[i]) != null) p.idt = num(C.idn[i]); else { p.ib = null; p.isc = null; }
       p.search = " " + normalize([p.n, city, county, p.z, cu, brand, p.dish].filter(Boolean).join(" ")) + " " + normAddr(p.a || "") + " ";
       p.nameText = " " + normalize([p.n, brand].filter(Boolean).join(" ")) + " ";
       p.key = normalize(p.n);
@@ -604,12 +660,13 @@
     if (!bibCount) st.bib = false;
   }
 
-  const guideOk = (g) => own(GUIDES, g);
+  // a guide the page has a button for (a guide with no places yet has none, and an old link to it opens the first guide)
+  const guideOk = (g) => own(GUIDES, g) && [...document.querySelectorAll(".ex-guides button")].some((b) => b.dataset.g === g);
   function readHash() {
     const h = new URLSearchParams(location.hash.slice(1));
-    const last = store.get("guide", "hotchicken");
+    const last = store.get("guide", FIRST);
     // a returning visitor gets the guide they used last, unless it's an empty Saved list
-    st.g = guideOk(h.get("g")) ? h.get("g") : guideOk(last) && !(last === "saved" && !saved.size) ? last : "hotchicken";
+    st.g = guideOk(h.get("g")) ? h.get("g") : guideOk(last) && !(last === "saved" && !saved.size) ? last : FIRST;
     st.q = h.get("q") || ""; st.town = h.get("town") || ""; st.cuisine = h.get("kind") || ""; st.chains = h.get("chains") === "1"; st.bib = h.get("bib") === "1";
     st.sort = h.get("sort") || ""; st.p = h.get("p") || "";
   }
@@ -624,21 +681,22 @@
   // filter changes replace the current history entry; opening a place pushes one, so Back closes the panel
   function saveHash(push = false) {
     const url = hashOf(true);
-    if (push) history.pushState({ tneats: "place" }, "", url);
-    else history.replaceState(st.p ? { tneats: "place" } : null, "", url);
+    if (push) history.pushState({ nceats: "place" }, "", url);
+    else history.replaceState(st.p ? { nceats: "place" } : null, "", url);
     store.set("guide", st.g);
   }
 
-  // a coarse Tennessee outline (TennesseeEats/Services/LocationService.swift's TennesseeOutline): a bounding box would count parts of
-  // Kentucky, Georgia and Alabama
-  const TN_RING = [[-90.33, 34.96], [-90.15, 35.17], [-90.21, 35.44], [-89.96, 35.64], [-89.98, 35.76], [-89.8, 35.84], [-89.64, 36.15],
-    [-89.74, 36.25], [-89.56, 36.38], [-89.55, 36.54], [-88.07, 36.54], [-88.07, 36.72], [-81.61, 36.62], [-81.68, 36.31],
-    [-81.84, 36.3], [-82.01, 36.09], [-82.34, 36.07], [-82.55, 35.91], [-82.65, 36.02], [-82.98, 35.74], [-83.49, 35.52],
-    [-83.86, 35.48], [-84.03, 35.24], [-84.25, 35.2], [-84.31, 34.95]];
-  function inTennessee(la, lo) {
+  // a coarse North Carolina outline (NorthCarolinaEats/Services/LocationService.swift's NorthCarolinaOutline): a bounding box would count
+  // parts of the neighboring states
+  const NC_RING = [[-84.3, 35.26], [-84.08, 35.3], [-83.9, 35.56], [-83.51, 35.6], [-83, 35.82], [-82.94, 35.96], [-82.69, 36.09],
+    [-82.56, 36], [-82.36, 36.15], [-82.05, 36.17], [-81.78, 36.39], [-81.68, 36.63], [-75.86, 36.59], [-75.42, 35.57], [-75.5, 35.19],
+    [-76.06, 35], [-76.51, 34.52], [-76.68, 34.66], [-76.84, 34.65], [-77.46, 34.43], [-77.73, 34.23], [-77.96, 33.8], [-78.25, 33.88],
+    [-78.56, 33.81], [-79.69, 34.77], [-80.81, 34.78], [-80.82, 34.92], [-80.94, 35.06], [-81.07, 35.01], [-81.09, 35.11], [-82.28, 35.16],
+    [-83.1, 34.96], [-84.33, 34.95]];
+  function inNorthCarolina(la, lo) {
     let inside = false;
-    for (let i = 0, j = TN_RING.length - 1; i < TN_RING.length; j = i++) {
-      const [xi, yi] = TN_RING[i], [xj, yj] = TN_RING[j];
+    for (let i = 0, j = NC_RING.length - 1; i < NC_RING.length; j = i++) {
+      const [xi, yi] = NC_RING[i], [xj, yj] = NC_RING[j];
       if ((yi > la) !== (yj > la) && lo < (xj - xi) * (la - yi) / (yj - yi) + xi) inside = !inside;
     }
     return inside;
@@ -649,10 +707,10 @@
     $("#ex-locmsg").textContent = "Finding you…";
     navigator.geolocation.getCurrentPosition((pos) => {
       here = { la: pos.coords.latitude, lo: pos.coords.longitude };
-      const inTN = inTennessee(here.la, here.lo);
-      $("#ex-locmsg").textContent = inTN ? "Sorted by distance from you. Your location stays in this browser." : "You're outside Tennessee: distances are from where you are. Your location stays in this browser.";
+      const inNC = inNorthCarolina(here.la, here.lo);
+      $("#ex-locmsg").textContent = inNC ? "Sorted by distance from you. Your location stays in this browser." : "You're outside North Carolina: distances are from where you are. Your location stays in this browser.";
       st.sort = GUIDES[st.g].sorts.includes("nearest") ? "nearest" : st.sort;
-      if (view === "map" && inTN) centerOn(here);
+      if (view === "map" && inNC) centerOn(here);
       shown = 100; render();
     }, (err) => {
       $("#ex-locmsg").textContent = err && err.code === 1 ? "Location is off for this site. Allow it in your browser settings to sort by distance."
@@ -683,7 +741,7 @@
       if (panel.hidden || panel.dataset.id !== p.id) {
         openPlace(p, false);
         // Forward to a place opened earlier: its entry was pushed after the list's, so closing it steps back, as after a tap
-        if (history.state && history.state.tneats === "place") { listAtPush = listHash(); panel.dataset.pushed = "1"; }
+        if (history.state && history.state.nceats === "place") { listAtPush = listHash(); panel.dataset.pushed = "1"; }
       }
     }
     else { if (!panel.hidden) closePlace(true); linkMissing(); }
