@@ -56,5 +56,8 @@ website blocklist = union of oh/co/pa/tn (879). Never modify another state's fol
 2. Research gaps (`data/research/app/LEADS.md`): Moravian bakeries (deweys.com, wilkersonbakery.com, hanescookies.com answer Claude's
    fetcher 429: read them in a browser), oldest places, fish camps, more hot dogs, one more Calabash place (for its page); Montgomery Sky
    Farm's address; Lantern's dated source; Good Hot Fish's MICHELIN level in a browser; adult-venue address list.
-3. Nick: send the DHHS records request (draft in `playbook/records-requests.md`); later repo/Pages, Cloudflare CNAME `northcarolina`,
-   ASC record. Nothing pushed.
+3. Nick: send the DHHS records request (draft in `playbook/records-requests.md`); Cloudflare CNAME `northcarolina` (then rebuild with
+   `NC_DOMAIN=northcarolina.eatsranked.com` and push); the Eats Ranked hub card; ASC record.
+
+Public repo (Nick's yes, 2026-10-26): https://github.com/nickstrom5/north-carolina-eats, GitHub Pages from `main` /docs at
+https://nickstrom5.github.io/north-carolina-eats/. Every later push still needs Nick's yes.
