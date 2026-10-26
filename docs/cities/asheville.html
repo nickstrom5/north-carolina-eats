@@ -2,7 +2,7 @@
 <html lang="en" data-base="/north-carolina-eats">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-YfPxYBJDc639ac4gHFGjFpJLVatKf6JcrBZeF/tuACM='; style-src 'sha256-AUu4sriSV+W/mZgM4dGevOcffVz2BeKC/gD4dBvrb8s='; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-YfPxYBJDc639ac4gHFGjFpJLVatKf6JcrBZeF/tuACM='; style-src 'sha256-hteK6KFbAUaJ+cuboJD2V1DPDGlnbvNtbQWbteFe+9Q='; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Asheville MICHELIN &amp; James Beard and Biscuits &amp; Livermush</title>
 <meta name="description" content="In Asheville, North Carolina: 17 MICHELIN or James Beard honorees and 3 biscuit and livermush places. Search 626 Asheville restaurants, cafés and bars.">
@@ -56,6 +56,7 @@
   header.site { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 0 14px; }
   .stripes { display: block; margin: 0 0 4px; border-radius: 4px; overflow: hidden; line-height: 0; }
   .stripes svg { display: block; width: 100%; height: 20px; }
+  .stripes .sky { fill: var(--surface2); }   /* the sky behind the ridges follows the theme */
   .logo { display: flex; align-items: center; gap: 10px; font: 800 24px/1 var(--display); text-transform: uppercase; letter-spacing: .01em; color: var(--accent); text-decoration: none; }
   .logo svg { flex: 0 0 auto; border-radius: 7px; }
   header.site nav { display: flex; flex-wrap: wrap; gap: 4px 16px; justify-content: flex-end; }
@@ -257,7 +258,7 @@
       <a href="/north-carolina-eats/explore/">Search</a>
     </nav>
   </header>
-  <div class="stripes" aria-hidden="true"><svg viewBox="0 0 1200 20" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="0" width="1200" height="20" fill="#f3f5fa"/><path d="M0 20V9L60 3 115 8 170 1 230 8 290 4 350 10 420 8 520 12 640 10 760 13 900 12 1040 14 1200 13V20Z" fill="#5d7aa6"/><path d="M0 20V12L70 7 130 11 190 6 250 11 320 9 400 13 520 13 660 14 820 14 980 15 1120 15 1200 15V20Z" fill="#2a4570"/><path d="M0 20V15L120 12 260 14 420 15 620 16 800 16 960 16.5 1060 16 1110 16.5 1150 16 1200 16.5V20Z" fill="#13294b"/><rect x="0" y="17" width="1200" height="3" fill="#b31942"/></svg></div>
+  <div class="stripes" aria-hidden="true"><svg viewBox="0 0 1200 20" preserveAspectRatio="none" aria-hidden="true"><rect class="sky" x="0" y="0" width="1200" height="20"/><path d="M0 20V9L60 3 115 8 170 1 230 8 290 4 350 10 420 8 520 12 640 10 760 13 900 12 1040 14 1200 13V20Z" fill="#5d7aa6"/><path d="M0 20V12L70 7 130 11 190 6 250 11 320 9 400 13 520 13 660 14 820 14 980 15 1120 15 1200 15V20Z" fill="#2a4570"/><path d="M0 20V15L120 12 260 14 420 15 620 16 800 16 960 16.5 1060 16 1110 16.5 1150 16 1200 16.5V20Z" fill="#13294b"/><rect x="0" y="17" width="1200" height="3" fill="#b31942"/></svg></div>
 <nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="/north-carolina-eats/">Home</a></li><li><a href="/north-carolina-eats/cities/">Cities</a></li><li aria-current="page">Asheville</li></ol></nav>
   <main id="main">
   <section class="hero">

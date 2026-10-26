@@ -2,12 +2,12 @@
 """Build the captioned App Store screenshots from simulator captures (the family's frame, from chi-eats/ios/scripts/appstore-screenshots.py,
 by way of mi-eats).
 
-Usage (from tn-eats/): .venv/bin/python scripts/appstore-screenshots.py
+Usage (from nc-eats/): .venv/bin/python scripts/appstore-screenshots.py
 Reads playbook/app-store/raw/iphone/*.png (1320x2868, iPhone 17 Pro Max) and playbook/app-store/raw/ipad/*.png (2064x2752, iPad Pro 13"),
 made with: OUT=$PWD/playbook/app-store/raw/<iphone|ipad> SLEEP=14 bash scripts/capture-screenshots.sh <udid> <screens>
 (the map needs about 20 s on a busy Mac). Writes playbook/app-store/iphone/NN-name.png and .../ipad/NN-name.png at the same sizes.
-Each frame: a pale tint behind, a flag-navy caption band with white condensed type and a short flag-red rule (the Grand Divisions
-band's colours), and the real capture below in a rounded frame.
+Each frame: a pale tint behind, a flag-navy caption band with white condensed type and a short flag-red rule (the colours of the
+mountains-to-sea band on Home), and the real capture below in a rounded frame.
 Rules (STATE_EATS_PLAYBOOK.md "Screenshots"): real captures, home screen first, no negative board in any image, map zoomed in to
 individual pins; captions make no price claim ("free"), use no third-party marks (say "award winners", not MICHELIN or James Beard)
 and no "best".
@@ -16,23 +16,23 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
-LAKE, SAND, BG, WHITE, INK = (0, 45, 114), (200, 16, 46), (243, 245, 250), (255, 255, 255), (14, 26, 48)   # navy band, red rule
+LAKE, SAND, BG, WHITE, INK = (19, 41, 75), (179, 25, 66), (243, 245, 250), (255, 255, 255), (14, 26, 48)   # flag navy band, flag red rule
 FONT = "/System/Library/Fonts/Avenir Next Condensed.ttc"   # Heavy face; the app itself uses the system compressed face
 
-IPHONE = [("01-home", "home.png", "Tennessee's food, list by list"),
-          ("02-hot-chicken", "hot_chicken.png", "Nashville hot chicken, nearest first"),
+IPHONE = [("01-home", "home.png", "North Carolina's food, list by list"),
+          ("02-eastern", "eastern_bbq.png", "Eastern whole hog, nearest first"),
           ("03-detail", "detail.png", "Each place, with notes checked by hand"),
-          ("04-barbecue", "bbq.png", "Memphis barbecue, from dry rub to spaghetti"),
-          ("05-map", "map.png", "Hand-checked places on the map"),
-          ("06-honors", "honors.png", "Award winners and classics"),
-          ("07-oldest", "oldest.png", "Tennessee's oldest places, oldest first"),
+          ("04-lexington", "lexington_bbq.png", "Lexington barbecue, red slaw and all"),
+          ("05-inspections", "inspections.png", "Wake County's own inspection scores"),
+          ("06-map", "map.png", "Hand-checked places on the map"),
+          ("07-honors", "honors.png", "Award winners and classics"),
           ("08-saved", "saved.png", "Keep your short list")]
-IPAD = [("01-home", "home.png", "Tennessee's food, list by list"),
-        ("02-hot-chicken", "hot_chicken.png", "Nashville hot chicken, nearest first"),
-        ("03-barbecue", "bbq.png", "Memphis barbecue, from dry rub to spaghetti"),
+IPAD = [("01-home", "home.png", "North Carolina's food, list by list"),
+        ("02-eastern", "eastern_bbq.png", "Eastern whole hog, nearest first"),
+        ("03-lexington", "lexington_bbq.png", "Lexington barbecue, red slaw and all"),
         ("04-map", "map.png", "Hand-checked places on the map"),
         ("05-honors", "honors.png", "Award winners and classics"),
-        ("06-oldest", "oldest.png", "Tennessee's oldest places, oldest first")]
+        ("06-inspections", "inspections.png", "Wake County's own inspection scores")]
 BANNED = ("free", "best", "#1", "top ", "james beard", "michelin")   # price claims, rankings and others' marks stay out of captions
 for _, _, cap in IPHONE + IPAD:
     assert not any(b in cap.lower() for b in BANNED), cap

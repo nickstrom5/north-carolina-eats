@@ -329,6 +329,7 @@ CSS = """
   header.site { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 0 14px; }
   .stripes { display: block; margin: 0 0 4px; border-radius: 4px; overflow: hidden; line-height: 0; }
   .stripes svg { display: block; width: 100%; height: 20px; }
+  .stripes .sky { fill: var(--surface2); }   /* the sky behind the ridges follows the theme */
   .logo { display: flex; align-items: center; gap: 10px; font: 800 24px/1 var(--display); text-transform: uppercase; letter-spacing: .01em; color: var(--accent); text-decoration: none; }
   .logo svg { flex: 0 0 auto; border-radius: 7px; }
   header.site nav { display: flex; flex-wrap: wrap; gap: 4px 16px; justify-content: flex-end; }
@@ -486,7 +487,7 @@ NAV = [("/eastern-north-carolina-barbecue.html", "Eastern BBQ"), ("/lexington-ba
        ("/north-carolina-restaurant-grades.html", "Grades"), ("/cities/", "Cities"), ("/explore/", "Search")]
 # from Murphy to Manteo: Blue Ridge ridges at the left easing into the coastal plain and the dunes at the right, three navy shades over
 # a red rule (the app's Home band and the share image's horizon, flattened to 20 px)
-RAYS = ('<svg viewBox="0 0 1200 20" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="0" width="1200" height="20" fill="#f3f5fa"/>'
+RAYS = ('<svg viewBox="0 0 1200 20" preserveAspectRatio="none" aria-hidden="true"><rect class="sky" x="0" y="0" width="1200" height="20"/>'
         '<path d="M0 20V9L60 3 115 8 170 1 230 8 290 4 350 10 420 8 520 12 640 10 760 13 900 12 1040 14 1200 13V20Z" fill="#5d7aa6"/>'
         '<path d="M0 20V12L70 7 130 11 190 6 250 11 320 9 400 13 520 13 660 14 820 14 980 15 1120 15 1200 15V20Z" fill="#2a4570"/>'
         '<path d="M0 20V15L120 12 260 14 420 15 620 16 800 16 960 16.5 1060 16 1110 16.5 1150 16 1200 16.5V20Z" fill="#13294b"/>'

@@ -145,12 +145,16 @@ open(f"{R}/app/LEADS.md", "w").write("# North Carolina research leads (not yet v
   Kermit's (Winston-Salem; journalnow is behind a TollBit wall), Zack's (Burlington), Jay Bee's (Statesville), Hap's Grill
   (Salisbury), The Dog House (Durham): Our State 2016 names them; no 2025-26 page found. Shorty's (Wake Forest): no active Wake permit,
   so it may have closed.
-- Calabash: Dockside Seafood House (not in our map data), Calabash Seafood Hut (Our State 2023 only). Ella's of Calabash burned in April
-  2023 (Our State); rebuilding not confirmed.
+- Calabash: Dockside Seafood House (not in our map data), Calabash Seafood Hut (1125 River Rd; Our State 2023 only; its 2024 coverage is
+  a syndicated copy of a robots-blocked paper, not cited). Ella's of Calabash burned in April 2023 (Our State); rebuilding not confirmed.
+  One more checked place gives Calabash its own web page (make-site.py MIN_GUIDE 4).
 - Fish camps (Gaston County): Twin Top Fish Camp, Catfish Cove, The Captain's Cap (Our State lists about 2020); Lineberger's is closed.
 - Livermush: Countryside BBQ (Marion), Circle G (Charlotte), Tony's Ice Cream (Gastonia): Our State 2019 only.
-- Moravian bakeries: Winkler Bakery (Old Salem; oldsalem.org sells Moravian cookies and sugar cake mix but gives no bakery hours),
-  Dewey's Bakery (deweys.com answered 429 twice).
+- Moravian bakeries: The Local Palate (Oct 6, 2022) names Winkler Bakery, Dewey's Bakery and Mrs. Hanes' Moravian Cookies for Moravian
+  cookies; none has 2025-26 evidence we may use yet. Winkler (521 S Main St): oldsalem.org lists it as a ticket location, with no dated
+  text. Dewey's (262 S Stratford Rd, 2876 Reynolda Rd), Wilkerson Moravian Bakery (593 S Stratford Rd) and Mrs. Hanes' (Clemmons): their
+  own sites (deweys.com, wilkersonbakery.com, hanescookies.com; robots allow) answered Claude's fetcher 429 on 2026-10-26, so read them
+  in a browser; visitwinstonsalem.com (which lists all of them, 2026 posts) answers a bot check.
 - Oldest places: needs a page that ties a founding year to the current address (Snappy Lunch 1923, Dick's 1921, The Roast Grill 1940,
   Sunny Side Oyster Bar 1935, Sam & Omie's 1937 are candidates).
 - Closed: Wilber's Barbecue (Goldsboro) and Jack Cobb & Son (Farmville), per Our State's editor's note.
